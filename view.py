@@ -17,119 +17,85 @@ class View:
         self.tab = self.window['tabgrp'].Get()
 
     def set_layout(self):
-        # Input image, with file browser
+
+        # Input files, with file browser and DICOM info button
         file_list_column = [
-            [
-                sg.Text("DICOM File:"),
-                sg.In(key="Text_Name", size=(25, 15)),
-                sg.In(key="File_Name", enable_events=True, visible=False),
-                sg.In(key="Folder_Name", enable_events=True, visible=False),
-                sg.FileBrowse('File', target='File_Name', file_types=[["DICOM Files", "*.dcm"]]),
-                sg.FolderBrowse('Folder', target='Folder_Name'),
-                sg.Button("DICOM Info", key="DICOM-Info")
-            ],
-            [sg.Canvas(key="IMAGE-IN")],
-            [sg.Canvas(key="IMAGE-OUT")]
+            View.file_list_layout("patient", "folder"),
+            View.file_list_layout("avg", "file"),
+            View.file_list_layout("atlas", "file")
         ]
 
-        # Windowing
-        windowing_layout = [
-            [sg.Canvas(key="Histogram", pad=(50, 10))],
-            [sg.Text("Min:", pad=((50, 0), (0, 0))),
-             sg.Slider(key="Slider_min", default_value=-1024, pad=(30, 0), size=(43, 15), orientation="horizontal",
-                       range=(-1024, 3071), resolution=1, enable_events=True)],
-            [sg.Text("Max:", pad=((50, 0), (5, 5))),
-             sg.Slider(key="Slider_max", default_value=3071, pad=(26, 5), size=(43, 15), orientation="horizontal",
-                       range=(-1024, 3071), resolution=1, enable_events=True)]
-        ]
-
-        # Cropping
-        crop_layout = [
-            [sg.Slider(key="Slider_left", default_value=0, pad=(130, 0), size=(38, 15), orientation="horizontal",
-                       range=(0, 500), enable_events=True, trough_color='red')],
-            [
-                sg.Slider(key="Slider_up", default_value=0, pad=(0, 0), size=(18, 15), orientation="vertical",
-                          range=(0, 500), enable_events=True, trough_color='green'),
-                sg.Canvas(key="IMAGE-CROPPED"),
-                sg.Slider(key="Slider_down", default_value=512, pad=(0, 0), size=(18, 15), orientation="vertical",
-                          range=(0, 500), enable_events=True, trough_color='blue')
-            ],
-            [sg.Slider(key="Slider_right", default_value=512, pad=(130, 0), size=(38, 15), orientation="horizontal",
-                       range=(0, 500), enable_events=True, trough_color='yellow')]
-        ]
-
-        # Segmentation
-        segmentation_layout = [
-            [sg.Canvas(key="Segmentation_Canvas", pad=(50, 10))],
-            [sg.Text("Threshold:", pad=((50, 0), (0, 0))),
-             sg.Slider(key="Slider_segmentation", default_value=100, pad=(26, 5), size=(43, 15),
-                       orientation="horizontal", range=(0, 4095), resolution=1, enable_events=True)],
-            [sg.Text("Type of segmentation:", pad=((50, 0), (10, 0))),
-             sg.Radio("Threshold", "Seg_type", key="thresh", default=False, pad=((10, 0), (10, 0))),
-             sg.Radio("Weak Connection", "Seg_type", key="thresh_weak", default=False, pad=((10, 0), (10, 0))),
-             sg.Radio("Strong Connection", "Seg_type", key="thresh_strong", default=True, pad=((10, 0), (10, 0)))],
-            [sg.Text("Alpha:", pad=((50, 0), (0, 0))),
-             sg.Slider(key="Slider_alpha", default_value=0.3, pad=(26, 5), size=(35, 15), orientation="horizontal",
-                       range=(0, 1), resolution=0.01, enable_events=True),
-             sg.Button("Color Picker", key="Color_Picker")]
-        ]
+        # Coregister
+        coregister_layout = []
 
         # Tab group
         tabgrp = [
             [sg.TabGroup([[
-                sg.Tab('Windowing', windowing_layout),
-                sg.Tab('Crop', crop_layout),
-                sg.Tab('Segmentation', segmentation_layout)
-            ]], key="tabgrp", enable_events=True)],
-            [sg.Button("See changes", key="See_changes", pad=((200, 0), (20, 0))),
-             sg.Button("Apply", key="Apply", pad=((10, 0), (20, 0))),
-             sg.Button("Reset", key="Reset", pad=((10, 0), (20, 0)))],
-            [sg.Column(
-                [[sg.Text("Frame:", pad=((30, 0), (0, 0)), key='Frame_Text'),
-                  sg.Slider(key="Frame", default_value=0, pad=(0, 0), size=(35, 15), orientation="horizontal",
-                            range=(0, 500), enable_events=True),
-                  sg.Text("View:", pad=((30, 0), (0, 0)), key='Axis_Text'),
-                  sg.Combo(['End', 'Front', 'Top'], key="Axis", default_value='Top', pad=(0, 0), enable_events=True),
-                  sg.Button("Set", key="Tensor_Change", pad=(30, 0))]],
-                visible=False,
-                pad=(0, 20),
-                key="Frame_Elements"
-            )]
+                sg.Tab('Patient', View.tensor_view_layout("patient"), key="patient"),
+                sg.Tab('Avg', View.tensor_view_layout("avg"), key="avg"),
+                sg.Tab('Atlas', View.tensor_view_layout("atlas"), key="atlas"),
+                sg.Tab('Coregister', coregister_layout, key="coregister")
+            ]], key="tabgrp", enable_events=True)]
         ]
 
         # Full layout
-        layout = [[
-            sg.Column(file_list_column),
-            sg.VSeperator(),
-            sg.Column(tabgrp),
-        ]]
+        layout = [
+            [sg.Column(file_list_column)],
+            [sg.Column(tabgrp)],
+        ]
 
         self.window = sg.Window("Image Viewer", layout, return_keyboard_events=True)
 
-    def reset_sliders(self):
-        self.reset_windowing_sliders()
-        self.reset_crop_sliders()
+    def reset_sliders(self, key=None):
+        if key is None:
+            for k in self.m.keys:
+                self.reset_sliders_by_key(k)
+        else:
+            self.reset_sliders_by_key(key)
 
-    def reset_windowing_sliders(self):
-        self.window['Slider_min'].Update(value=-1024)
-        self.window["Slider_max"].Update(value=3071)
+    def reset_sliders_by_key(self, key):
+        print(key)
+        self.window[key+'-frame-top'].Update(range=(0, self.m.tensors[key].shape[2] - 1), value=0)
+        self.window[key+'-frame-front'].Update(range=(0, self.m.tensors[key].shape[0] - 1), value=0)
+        self.window[key+'-frame-end'].Update(range=(0, self.m.tensors[key].shape[1] - 1), value=0)
 
-    def reset_crop_sliders(self):
-        self.window["Slider_up"].Update(range=(0, self.m.img_result.shape[0]), value=0)
-        self.window["Slider_down"].Update(range=(0, self.m.img_result.shape[0]), value=self.m.img_result.shape[0])
-        self.window["Slider_left"].Update(range=(0, self.m.img_result.shape[1]), value=0)
-        self.window["Slider_right"].Update(range=(0, self.m.img_result.shape[1]), value=self.m.img_result.shape[1])
+    @staticmethod
+    def tensor_view_layout(key):
+        return [
+            [View.tensor_slice_view(key, "top"),
+             View.tensor_slice_view(key, "front"),
+             View.tensor_slice_view(key, "end")
+             ]
+        ]
 
-    def reset_frame_controls(self):
-        self.window["Frame"].Update(value=0)
-        self.window["Axis"].Update(value='Top')
+    @staticmethod
+    def tensor_slice_view(key, t_view):
+        return sg.Column([[sg.Canvas(key=key+"-"+t_view, size=(300, 300))],
+                         [sg.Slider(key=key+"-frame-"+t_view, default_value=0, pad=(0, 0), size=(35, 15),
+                                    orientation="horizontal",
+                                    range=(0, 500), enable_events=True),
+                          sg.Button("Set", key=key+"-set-"+t_view, pad=((5, 20), (15, 0)))]
+                          ], element_justification='c')
 
-    def show_alert_message(self, message):
+    @staticmethod
+    def file_list_layout(key, f_type):
+        return [
+            sg.Text(key.capitalize()+":"),
+            sg.In(key=key+"_file", pad=((16, 10), (0, 0)), size=(60, 15)),
+            sg.In(key=key+"_name", enable_events=True, visible=False),
+            sg.FileBrowse(f_type.capitalize(), target=key+'_name', file_types=[["DICOM Files", "*.dcm"]])
+            if f_type == "file" else sg.FolderBrowse(f_type.capitalize(), pad=((10, 0), (0, 0)), target=key+'_name'),
+            sg.Button("Info", pad=((15, 0), (0, 0)), key="DICOM-Info-"+key)
+        ]
+
+    @staticmethod
+    def show_alert_message(message):
         sg.Popup(message, keep_on_top=True)
 
     # Popup color chooser taken from here:
     # https://github.com/PySimpleGUI/PySimpleGUI/blob/master/DemoPrograms/Demo_Color_Chooser_Custom.py
-    def popup_color_chooser(self, look_and_feel=None):
+    @staticmethod
+    def popup_color_chooser(look_and_feel=None):
         """
         :return: Any(str, None) Returns hex string of color chosen or None if nothing was chosen
         """

@@ -4,8 +4,5 @@ class ITab:
         self.m = model
         self.v = view
 
-    def plot(self):
-        pass
-
-    def see_changes(self):
+    def refresh(self):
         pass

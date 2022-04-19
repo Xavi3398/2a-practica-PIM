@@ -54,82 +54,13 @@ def painter(img1, img2, alpha2):
     return (img1.astype('float') * (1 - alpha2) + img2.astype('float') * alpha2).astype('uint8')
 
 
-def get_3d_neighbors(point, shape, points):
-
-    neighbors = []
-    y, x, z = point
-    shape_x = shape[1]
-    shape_y = shape[0]
-    shape_z = shape[2]
-
-    for y1, x1, z1 in points:
-        x2 = x + x1
-        y2 = y + y1
-        z2 = z + z1
-        if 0 <= x2 < shape_x and 0 <= y2 < shape_y and 0 <= z2 < shape_z:
-            neighbors.append((y2, x2, z2))
-
-    return neighbors
-
-
-def get_2d_neighbors(point, shape, points):
-
-    neighbors = []
-    y, x = point
-    shape_x = shape[1]
-    shape_y = shape[0]
-
-    for y1, x1 in points:
-        x2 = x + x1
-        y2 = y + y1
-        if 0 <= x2 < shape_x and 0 <= y2 < shape_y:
-            neighbors.append((y2, x2))
-
-    return neighbors
-
-
-def connected_thresh(img, origin, method="3d_close"):
-    t1 = time.time()
-    res = np.zeros(shape=img.shape, dtype=img.dtype)
-    processed = set()
-
-    # Check number of dimensions and set neighbors method
-    if img.ndim == 2:
-        x, y = origin
-        pending = [(y, x)]
-        get_neighbors = get_2d_neighbors
-    else:
-        x, y, z = origin
-        pending = [(y, x, z)]
-        get_neighbors = get_3d_neighbors
-
-    # Select neighbors depending on method
-    if method == "3d_close":
-        points = Point.close_neighbors_3d
-    elif method == "3d":
-        points = Point.neighbors_3d
-    elif method == "2d_close":
-        points = Point.close_neighbors_2d
-    else:
-        points = Point.neighbors_2d
-
-    while len(pending) > 0:
-
-        # Abort if it takes too long
-        if time.time() - t1 > 5:
-            raise TookTooLongException(res)
-
-        point = pending.pop(0)
-        res[point] = 1
-
-        # Add neighbors
-        for p in get_neighbors(point, img.shape, points):
-            if p not in processed:
-                processed.add(p)
-                if img[p]:
-                    pending.append(p)
-
-    return res
+def get_aspect(aspect, axis):
+    if axis == 0:
+        return aspect[2] / aspect[1]
+    elif axis == 1:
+        return aspect[2] / aspect[0]
+    elif axis == 2:
+        return aspect[0] / aspect[1]
 
 
 # Convert from screen coordinates to tensor coordinates
