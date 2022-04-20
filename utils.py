@@ -1,5 +1,6 @@
 import numpy as np
 import time
+import math
 from matplotlib import pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
@@ -7,40 +8,6 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 class TookTooLongException(Exception):
     def __init__(self, img):
         self.img = img
-
-
-class Point:
-
-    neighbors_2d = [
-        [-1, -1], [-1, 0], [-1, 1],
-        [0, -1], [0, 1],
-        [1, -1], [1, 0], [1, 1]
-    ]
-
-    close_neighbors_2d = [
-        [-1, 0], [0, -1],
-        [0, 1], [1, 0]
-    ]
-
-    close_neighbors_3d = [
-        [-1, 0, 0], [0, -1, 0],
-        [0, 0, -1], [1, 0, 0],
-        [0, 1, 0], [0, 0, 1],
-    ]
-
-    neighbors_3d = [
-        [-1, -1, -1], [-1, -1, 0], [-1, -1, 1],
-        [-1, 0, -1], [-1, 0, 0], [-1, 0, 1],
-        [-1, 1, -1], [-1, 1, 0], [-1, 1, 1],
-
-        [0, -1, -1], [0, -1, 0], [0, -1, 1],
-        [0, 0, -1], [0, 0, 1],
-        [0, 1, -1], [0, 1, 0], [0, 1, 1],
-
-        [1, -1, -1], [1, -1, 0], [1, -1, 1],
-        [1, 0, -1], [1, 0, 0], [1, 0, 1],
-        [1, 1, -1], [1, 1, 0], [1, 1, 1],
-    ]
 
 
 def color_mask(mask, color):
@@ -83,32 +50,6 @@ def get_aspect(aspect, axis):
         return aspect[0] / aspect[1]
 
 
-# Convert from screen coordinates to tensor coordinates
-# Rotations of the slices have to be reverted
-def get_coordinates(x1, y1, axis, frame, shape):
-
-    if axis == 0:  # Front
-        x2 = y1
-        y2 = shape[1] - x1
-        x = y2
-        z = x2
-        y = frame
-    elif axis == 1:  # End
-        x2 = y1
-        y2 = shape[0] - x1
-        y = y2
-        z = x2
-        x = frame
-    else:  # Top
-        x2 = shape[1] - x1
-        y2 = shape[0] - y1
-        x = x2
-        y = y2
-        z = frame
-
-    return [x, y, z]
-
-
 def to_hounsfield(value):
     return value * 4096 - 1024
 
@@ -149,3 +90,73 @@ def delete_figure_agg(tk_agg):
     if tk_agg is not None:
         tk_agg.get_tk_widget().forget()
         plt.close('all')
+
+
+def traslacion(punto, vector_traslacion):
+    x, y, z = punto
+    t_1, t_2, t_3 = vector_traslacion
+    punto_transformado = (x+t_1, y+t_2, z+t_3)
+    return punto_transformado
+
+
+def rotacion_axial(punto, angulo_en_radianes, eje_traslacion):
+    x, y, z = punto
+    v_1, v_2, v_3 = eje_traslacion
+    #   Vamos a normalizarlo para evitar introducir restricciones en el optimizador
+    v_norm = math.sqrt(sum([coord ** 2 for coord in [v_1, v_2, v_3]]))
+    v_1, v_2, v_3 = v_1 / v_norm, v_2 / v_norm, v_3 / v_norm
+    #   Calcula cuaternión del punto
+    p = (0, x, y, z)
+    #   Calcula cuaternión de la rotación
+    cos, sin = math.cos(angulo_en_radianes / 2), math.sin(angulo_en_radianes / 2)
+    q = (cos, sin * v_1, sin * v_2, sin * v_3)
+    #   Calcula el conjugado
+    q_conjugado = (cos, -sin * v_1, -sin * v_2, -sin * v_3)
+    #   Calcula el cuaternión correspondiente al punto rotado
+    p_prima = multiplicar_quaterniones(q, multiplicar_quaterniones(p, q_conjugado))
+    # Devuelve el punto rotado
+    punto_transformado = p_prima[1], p_prima[2], p_prima[3]
+    return punto_transformado
+
+
+def transformacion_rigida_3D(punto, parametros):
+    x, y, z = punto
+    t_11, t_12, t_13, alpha_in_rad, v_1, v_2, v_3 = parametros
+    #   Aplicar una primera traslación
+    x, y, z = traslacion(punto=(x, y, z), vector_traslacion=(t_11, t_12, t_13))
+    #   Aplicar una rotación axial traslación
+    x, y, z = rotacion_axial(punto=(x, y, z), angulo_en_radianes=alpha_in_rad, eje_traslacion=(v_1, v_2, v_3))
+    return x, y, z
+
+
+def multiplicar_quaterniones(q1, q2):
+    """Multiplica cuaterniones expresados como (1, i, j, k)."""
+    return (
+        q1[0] * q2[0] - q1[1] * q2[1] - q1[2] * q2[2] - q1[3] * q2[3],
+        q1[0] * q2[1] + q1[1] * q2[0] + q1[2] * q2[3] - q1[3] * q2[2],
+        q1[0] * q2[2] - q1[1] * q2[3] + q1[2] * q2[0] + q1[3] * q2[1],
+        q1[0] * q2[3] + q1[1] * q2[2] - q1[2] * q2[1] + q1[3] * q2[0]
+    )
+
+
+def cuaternion_conjugado(q):
+    """Conjuga un cuaternión expresado como (1, i, j, k)."""
+    return (
+        q[0], -q[1], -q[2], -q[3]
+    )
+
+
+def residuos_cuadraticos(lista_puntos_ref, lista_puntos_inp):
+    """Devuelve un array con los residuos cuadráticos del ajuste."""
+    residuos = []
+    for p1, p2 in zip(lista_puntos_ref, lista_puntos_inp):
+        p1 = np.asarray(p1, dtype='float')
+        p2 = np.asarray(p2, dtype='float')
+        residuos.append(np.sqrt(np.sum(np.power(p1-p2, 2))))
+    return np.power(residuos, 2)
+
+
+def funcion_a_minimizar(parametros):
+    landmarks_inp_transf = [transformacion_rigida_3D(landmark, parametros) for landmark in landmarks_inp]
+    # Debe devolver una array 1-dimensional con los errores cuadráticos medios.
+    return residuos_cuadraticos(landmarks_ref, landmarks_inp_transf)

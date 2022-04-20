@@ -19,26 +19,46 @@ class View:
     def set_layout(self):
 
         # Input files, with file browser and DICOM info button
-        file_list_column = [
-            View.file_list_layout("patient", "folder"),
-            View.file_list_layout("avg", "file"),
-            View.file_list_layout("atlas", "file"),
-            [sg.Text("Atlas keys:"),
-             sg.In(key="atlas_keys_file", pad=((16, 10), (0, 0)), size=(60, 15)),
-             sg.In(key="atlas_keys_name", enable_events=True, visible=False),
-             sg.FileBrowse("File", target='atlas_keys_name', file_types=[["TXT files", "*.txt"]])]
-        ]
-
-        # Atlas + Avg
-        alpha_avg_atlas = [
-            [sg.Column(View.tensor_view_layout("avg_atlas"))],
-            [sg.Text("Alpha:", pad=((30, 0), (0, 0))),
-             sg.Slider(key="alpha-avg_atlas", default_value=0, pad=(0, 0), size=(35, 15), orientation="horizontal",
-                       range=(0, 500), enable_events=True)],
-        ]
+        file_list_column = [[
+            sg.Column([
+                [View.file_list_layout("patient", "folder", 0, 0, 0)],
+                [View.file_list_layout("avg", "file", 0, 20, 15)]
+            ]),
+            sg.Column([
+                [View.file_list_layout("atlas", "file", 30, 33, 0)],
+                [View.file_list_layout("atlas", "txt", 30, 0, 0)]
+                ])
+        ]]
 
         # Coregister
-        coregister_layout = []
+        coregister_layout = [[
+            sg.Column([
+                [sg.Column(View.tensor_view_layout("patient_points", slider_len=25))],
+                [sg.Column(View.tensor_view_layout("avg_points", slider_len=25))]
+            ]),
+            sg.Column([
+                [sg.Column([[
+                    View.tensor_points_listbox_layout("patient", "Patient points"),
+                    View.tensor_points_listbox_layout("avg", "Patient Avg")
+                ]])],
+                [sg.Column([
+                    [sg.Button("Coregister", key="compute-coregister")],
+                    [sg.Text("MSE before coregister:"),
+                     sg.InputText(readonly=True, key="mse-before", size=(15,15))],
+                    [sg.Text("MSE after coregister: "),
+                     sg.InputText(readonly=True, key="mse-after", size=(15,15))],
+                    [sg.Text("Translation:"),
+                     sg.InputText(readonly=True, key="translation-x", size=(10,15)),
+                     sg.InputText(readonly=True, key="translation-y", size=(10,15)),
+                     sg.InputText(readonly=True, key="translation-z", size=(10,15))],
+                    [sg.Text("Rotation:"),
+                     sg.InputText(readonly=True, key="rotation-x", size=(10,15)),
+                     sg.InputText(readonly=True, key="rotation-y", size=(10,15)),
+                     sg.InputText(readonly=True, key="rotation-z", size=(10,15)),
+                     sg.InputText(readonly=True, key="rotation-v", size=(10,15))],
+                ])]
+            ])
+        ]]
 
         # Tab group
         tabgrp = [
@@ -67,23 +87,47 @@ class View:
             self.reset_sliders_by_key(key)
 
     def reset_sliders_by_key(self, key):
-        self.window[key+'-frame-top'].Update(range=(0, self.m.tensors[key].shape[0] - 1), value=0)
-        self.window[key+'-frame-front'].Update(range=(0, self.m.tensors[key].shape[1] - 1), value=0)
-        self.window[key+'-frame-end'].Update(range=(0, self.m.tensors[key].shape[2] - 1), value=0)
+        self.window[key+'-frame-top'].Update(range=(0, self.m.tensors[key].shape[0] - 1),
+                                             value=0)
+        self.window[key+'-frame-front'].Update(range=(0, self.m.tensors[key].shape[1] - 1),
+                                               value=0)
+        self.window[key+'-frame-end'].Update(range=(0, self.m.tensors[key].shape[2] - 1),
+                                             value=0)
+
+    def reset_sliders_alpha(self, alpha_key, key):
+        self.window[alpha_key + '-frame-top'].Update(range=(0, self.m.tensors[key].shape[0] - 1),
+                                                     value=0)
+        self.window[alpha_key + '-frame-front'].Update(range=(0, self.m.tensors[key].shape[1] - 1),
+                                                       value=0)
+        self.window[alpha_key + '-frame-end'].Update(range=(0, self.m.tensors[key].shape[2] - 1),
+                                                     value=0)
 
     @staticmethod
-    def tensor_view_layout(key):
+    def tensor_points_selector_layout(key):
+        return sg.Column(View.tensor_view_layout(key, slider_len=25))
+
+    @staticmethod
+    def tensor_points_listbox_layout(key, title):
+        return sg.Column([
+            [sg.Text(title + ":", pad=((30, 0), (0, 0))),
+             sg.Button("Reset", key="reset-points-" + key, pad=((10, 0), (0, 0)))],
+            [sg.Listbox(values=[], size=(18, 10), key='points-' + key, pad=((30, 0), (5, 30)),
+                        highlight_background_color="gray")]
+        ])
+
+    @staticmethod
+    def tensor_view_layout(key, slider_len=35):
         return [
-            [View.tensor_slice_view(key, "top"),
-             View.tensor_slice_view(key, "front"),
-             View.tensor_slice_view(key, "end")
+            [View.tensor_slice_view(key, "top", slider_len),
+             View.tensor_slice_view(key, "front", slider_len),
+             View.tensor_slice_view(key, "end", slider_len)
              ]
         ]
 
     @staticmethod
-    def tensor_slice_view(key, t_view):
+    def tensor_slice_view(key, t_view, slider_len=35):
         return sg.Column([[sg.Canvas(key=key+"-"+t_view, size=(300, 300))],
-                         [sg.Slider(key=key+"-frame-"+t_view, default_value=0, pad=(0, 0), size=(35, 15),
+                         [sg.Slider(key=key+"-frame-"+t_view, default_value=0, pad=(0, 0), size=(slider_len, 15),
                                     orientation="horizontal",
                                     range=(0, 500), enable_events=True),
                           sg.Button("Set", key=key+"-set-"+t_view, pad=((5, 20), (15, 0)))]
@@ -101,29 +145,37 @@ class View:
                  sg.Button("Set", key="set-alpha-"+key, pad=((5, 30), (top_pad, 0)))],
 
                 [sg.Text("Mask color:", pad=((0, 5), (top_pad, 0))),
-                 sg.Button("Random colors", key="change-colors", pad=((0, 10), (top_pad, 0))),
-                 sg.Button("Pick Color", key="Color_Picker", pad=((0, 30), (top_pad, 0)))]
+                 sg.Button("Random colors", key="change-colors-"+key, pad=((0, 10), (top_pad, 0))),
+                 sg.Button("Pick Color", key="Color-Picker-"+key, pad=((0, 30), (top_pad, 0)))]
             ]),
 
              sg.Column([
                  [sg.Text("Highlighted regions:", pad=((30, 15), (top_pad, 0))),
                   sg.Button("Set", key="set-listbox-"+key, pad=((5, 0), (top_pad, 0)))],
-                 [sg.Listbox(values=["region1", "region2", "region3"], size=(25, 10), key='region-'+key,
+                 [sg.Listbox(values=[], size=(25, 10), key='region-'+key,
                              pad=((30, 0), (5, 30)), select_mode=sg.LISTBOX_SELECT_MODE_EXTENDED,
                              highlight_background_color="gray")]]
              )]
         ]
 
     @staticmethod
-    def file_list_layout(key, f_type):
-        return [
-            sg.Text(key.capitalize()+":"),
-            sg.In(key=key+"_file", pad=((16, 10), (0, 0)), size=(60, 15)),
-            sg.In(key=key+"_name", enable_events=True, visible=False),
-            sg.FileBrowse(f_type.capitalize(), target=key+'_name', file_types=[["DICOM Files", "*.dcm"]])
-            if f_type == "file" else sg.FolderBrowse(f_type.capitalize(), pad=((10, 0), (0, 0)), target=key+'_name'),
-            sg.Button("Info", pad=((15, 0), (0, 0)), key="DICOM-Info-"+key)
-        ]
+    def file_list_layout(key, f_type, pad0, pad1, pad2):
+        if f_type == "txt":
+            return sg.Column([[
+                sg.Text("Atlas keys:", pad=((pad0, 0), (0, 0))),
+                sg.In(key=key+"_keys_file", pad=((16+pad1, 10), (0, 0)), size=(60, 15)),
+                sg.In(key=key+"_keys_name", enable_events=True, visible=False),
+                sg.FileBrowse("File", target=key+'_keys_name', file_types=[["TXT files", "*.txt"]])
+            ]])
+        else:
+            return sg.Column([[
+                sg.Text(key.capitalize()+":", pad=((pad0, 0), (0, 0))),
+                sg.In(key=key+"_file", pad=((16+pad1, 10), (0, 0)), size=(60, 15)),
+                sg.In(key=key+"_name", enable_events=True, visible=False),
+                sg.FileBrowse(f_type.capitalize(), target=key+'_name', file_types=[["DICOM Files", "*.dcm"]])
+                if f_type == "file" else sg.FolderBrowse(f_type.capitalize(), target=key+'_name'),
+                sg.Button("Info", pad=((10+pad2, 0), (0, 0)), key="DICOM-Info-"+key)
+            ]])
 
     @staticmethod
     def show_alert_message(message):

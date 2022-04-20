@@ -28,10 +28,10 @@ if __name__ == "__main__":
 
         if v.tab == "patient":
             c = c_patient
-        elif v.tab == "atlas_atlas":
-            c = c_atlas
         elif v.tab == "avg":
             c = c_avg
+        elif v.tab == "atlas_atlas":
+            c = c_atlas
         elif v.tab == "avg_atlas":
             c = c_avg_atlas
         else:
@@ -45,20 +45,17 @@ if __name__ == "__main__":
         elif event == "tabgrp":
             c.refresh()
 
-        elif event == "Color_Picker":
-            if m.tensors["atlas"] is not None:
-                m.color_map = set_color_map(np.unique(m.tensors["atlas"]),
-                                            [int(c * 255) for c in plt.colors.to_rgb(v.popup_color_chooser())])
-                c.refresh()
-
-        elif event == "change-colors":
-            if m.tensors["atlas"] is not None:
-                m.color_map = get_color_map(np.unique(m.tensors["atlas"]))
-                c.refresh()
-
         elif event == "atlas_keys_name":
             v.window["atlas_keys_file"].Update(value=v.values["atlas_keys_name"])
             cc.read_atlas_keys()
+
+        elif event == "reset-points-patient":
+            m.points["patient"].clear()
+            v.window["points-patient"].Update(values=m.points["patient"])
+
+        elif event == "reset-points-avg":
+            m.points["avg"].clear()
+            v.window["points-avg"].Update(values=m.points["avg"])
 
         else:
             for key in m.keys:
@@ -75,7 +72,7 @@ if __name__ == "__main__":
                     else:
                         cc.read_dcom_file(key)
 
-                    if key == v.tab or key in v.tab:
+                    if key == v.tab or key in v.tab or ((key == "patient" or key == "avg") and v.tab == "coregister"):
                         c.refresh()
 
             for key in m.tab_keys:
@@ -93,5 +90,14 @@ if __name__ == "__main__":
                     c.refresh()
                 if event == "set-listbox-"+key:
                     c.refresh()
+                elif event == "Color-Picker-"+key:
+                    if m.tensors["atlas"] is not None:
+                        m.color_map = set_color_map(np.unique(m.tensors["atlas"]),
+                                                    [int(c * 255) for c in plt.colors.to_rgb(v.popup_color_chooser())])
+                        c.refresh()
+                elif event == "change-colors-"+key:
+                    if m.tensors["atlas"] is not None:
+                        m.color_map = get_color_map(np.unique(m.tensors["atlas"]))
+                        c.refresh()
 
     v.window.close()

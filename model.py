@@ -3,7 +3,7 @@ class Model:
     def __init__(self):
 
         self.keys = ["patient", "atlas", "avg"]
-        self.tab_keys = ["patient", "atlas_atlas", "avg", "avg_atlas"]
+        self.tab_keys = ["patient", "atlas_atlas", "avg", "avg_atlas", "patient_points", "avg_points"]
         self.alpha_keys = ["avg_atlas", "atlas_atlas"]
 
         self.dcms = {key: None for key in self.keys}
@@ -19,3 +19,5 @@ class Model:
 
         self.region_names = None
         self.region_ids = None
+
+        self.points = { "patient": [], "avg": []}
