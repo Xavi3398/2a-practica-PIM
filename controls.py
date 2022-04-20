@@ -18,8 +18,7 @@ class Controls:
         # Read file
         self.m.files[key] = self.v.values[key+"_name"]
         self.m.dcms[key] = pydicom.dcmread(self.m.files[key])
-        # self.m.tensors[key] = self.m.dcms[key].pixel_array
-        self.m.tensors[key] = np.moveaxis(self.m.dcms[key].pixel_array, 0, -1)
+        self.m.tensors[key] = self.m.dcms[key].pixel_array
 
         # Get dcom aspect ratio
         # self.m.aspect_atlas[0] = float(self.m.dcm_atlas["PixelSpacing"][0])
@@ -27,6 +26,16 @@ class Controls:
 
         # Set cropping slider values
         self.v.reset_sliders(key)
+
+        if key == "avg":
+            self.m.tensors[key] = self.m.tensors[key][6:-6, 6:-6, 6:-6]
+        elif key == "atlas":
+            self.v.window['avg_atlas-frame-top'].Update(range=(0, self.m.tensors[key].shape[0] - 1), value=0)
+            self.v.window['avg_atlas-frame-front'].Update(range=(0, self.m.tensors[key].shape[1] - 1), value=0)
+            self.v.window['avg_atlas-frame-end'].Update(range=(0, self.m.tensors[key].shape[2] - 1), value=0)
+            self.m.color_map = get_color_map(np.unique(self.m.tensors[key]))
+
+        print(self.m.tensors[key].shape)
 
     def read_dcom_folder(self, key):
 
@@ -42,19 +51,18 @@ class Controls:
 
         # Order slices by instance number and get the ordered list of images
         imgs = sorted(imgs, key=lambda t: t[1], reverse=True)
-        self.m.aspects[key][2] = float(abs(imgs[0][1] - imgs[1][1]))
+        self.m.aspects[key][0] = float(abs(imgs[0][1] - imgs[1][1]))
         imgs = [img[0] for img in imgs]
 
         # Change order of axis (Y, X, Z) instead of (Z, Y, X)
-        # self.m.tensors[key] = np.array(imgs)
-        self.m.tensors[key] = np.moveaxis(np.array(imgs), 0, -1)
+        self.m.tensors[key] = np.array(imgs)
 
         # Load first frame
         self.m.dcms[key] = pydicom.dcmread(files[0])
 
         # Get aspect ratio
-        self.m.aspects[key][0] = float(self.m.dcms[key]["PixelSpacing"][0])
-        self.m.aspects[key][1] = float(self.m.dcms[key]["PixelSpacing"][1])
+        self.m.aspects[key][1] = float(self.m.dcms[key]["PixelSpacing"][0])
+        self.m.aspects[key][2] = float(self.m.dcms[key]["PixelSpacing"][1])
 
         # Set slider values
         self.v.reset_sliders(key)

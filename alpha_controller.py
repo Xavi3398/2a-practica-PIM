@@ -1,20 +1,22 @@
 from utils import *
 from ITab import *
 from matplotlib import pyplot as plt
+import cv2
 
 
-class TensorController(ITab):
+class AlphaController(ITab):
 
-    def __init__(self, model, view, key, t_file):
+    def __init__(self, model, view, tensor_key, mask_key):
         super().__init__(model, view)
         self.plot_front = None
         self.plot_end = None
         self.plot_top = None
-        self.key = key
-        self.t_file = t_file
+        self.key = tensor_key + "_" + mask_key
+        self.tensor_key = tensor_key
+        self.mask_key = mask_key
 
     def refresh(self):
-        if self.m.tensors[self.key] is not None:
+        if self.m.tensors[self.tensor_key] is not None and self.m.tensors[self.mask_key] is not None:
             self.refresh_view(0)
             self.refresh_view(1)
             self.refresh_view(2)
@@ -33,8 +35,17 @@ class TensorController(ITab):
     def plot_image(self, axis, frame, title, canvas_key, plot):
         fig = plt.figure(figsize=(5, 4))
         ax = fig.add_subplot(111)
-        ax.imshow(get_slice(axis, frame, self.m.tensors[self.key], self.t_file), cmap='gray',
-                  aspect=get_aspect(axis=axis, aspect=self.m.aspects[self.key]))
+
+        img = get_slice(axis, frame, self.m.tensors[self.tensor_key], "file").astype('float')
+        rgb = cv2.cvtColor((img * 255 / np.max(img)).astype("uint8"), cv2.COLOR_GRAY2RGB)  # Gray image to RGB
+        mask = get_slice(axis, frame, self.m.tensors[self.mask_key], "file")
+
+        for id_region in np.unique(mask):
+            if id_region != 0:
+                mask_r = color_mask(mask == id_region, self.m.color_map[id_region])  # Color mask
+                rgb = painter(rgb, mask_r, self.v.values["alpha-"+self.key])
+
+        ax.imshow(rgb, cmap='gray', aspect=get_aspect(axis=axis, aspect=self.m.aspects[self.mask_key]))
         ax.axis(False)
         plt.title(title)
         return draw_figure(self.v.window[canvas_key].TKCanvas, fig, plot)

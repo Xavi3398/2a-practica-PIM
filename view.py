@@ -25,6 +25,14 @@ class View:
             View.file_list_layout("atlas", "file")
         ]
 
+        # Atlas + Avg
+        alpha_avg_atlas = [
+            [sg.Column(View.tensor_view_layout("avg_atlas"))],
+            [sg.Text("Alpha:", pad=((30, 0), (0, 0))),
+             sg.Slider(key="alpha-avg_atlas", default_value=0, pad=(0, 0), size=(35, 15), orientation="horizontal",
+                       range=(0, 500), enable_events=True)],
+        ]
+
         # Coregister
         coregister_layout = []
 
@@ -34,6 +42,7 @@ class View:
                 sg.Tab('Patient', View.tensor_view_layout("patient"), key="patient"),
                 sg.Tab('Avg', View.tensor_view_layout("avg"), key="avg"),
                 sg.Tab('Atlas', View.tensor_view_layout("atlas"), key="atlas"),
+                sg.Tab('Avg + Atlas', View.alpha_view_layout("avg_atlas"), key="avg_atlas", element_justification='c'),
                 sg.Tab('Coregister', coregister_layout, key="coregister")
             ]], key="tabgrp", enable_events=True)]
         ]
@@ -54,10 +63,9 @@ class View:
             self.reset_sliders_by_key(key)
 
     def reset_sliders_by_key(self, key):
-        print(key)
-        self.window[key+'-frame-top'].Update(range=(0, self.m.tensors[key].shape[2] - 1), value=0)
-        self.window[key+'-frame-front'].Update(range=(0, self.m.tensors[key].shape[0] - 1), value=0)
-        self.window[key+'-frame-end'].Update(range=(0, self.m.tensors[key].shape[1] - 1), value=0)
+        self.window[key+'-frame-top'].Update(range=(0, self.m.tensors[key].shape[0] - 1), value=0)
+        self.window[key+'-frame-front'].Update(range=(0, self.m.tensors[key].shape[1] - 1), value=0)
+        self.window[key+'-frame-end'].Update(range=(0, self.m.tensors[key].shape[2] - 1), value=0)
 
     @staticmethod
     def tensor_view_layout(key):
@@ -76,6 +84,28 @@ class View:
                                     range=(0, 500), enable_events=True),
                           sg.Button("Set", key=key+"-set-"+t_view, pad=((5, 20), (15, 0)))]
                           ], element_justification='c')
+
+    @staticmethod
+    def alpha_view_layout(key):
+        top_pad = 30
+        regions = ["region1", "region2", "region3"]
+        return [
+            [sg.Column(View.tensor_view_layout(key))],
+            [sg.Text("Alpha:", pad=((0, 5), (top_pad, 0))),
+             sg.Slider(key="alpha-"+key, default_value=0.5, pad=((0, 0), (top_pad - 15, 0)), size=(35, 15), orientation="horizontal",
+                       range=(0, 1), resolution=0.1,  enable_events=True),
+             sg.Button("Set", key="set-alpha-"+key, pad=((5, 30), (top_pad, 0))),
+
+             sg.Text("Mask color:", pad=((30, 5), (top_pad, 0))),
+             sg.Button("Random colors", key="change-colors", pad=((0, 10), (top_pad, 0))),
+             sg.Button("Pick Color", key="Color_Picker", pad=((0, 30), (top_pad, 0))),
+
+             sg.Text("Mask color:", pad=((30, 5), (top_pad, 0))),
+             sg.Listbox(regions, size=(30, len(regions)), key='region-'+key,
+                        pad=((0, 10), (top_pad, 0)), select_mode=sg.LISTBOX_SELECT_MODE_MULTIPLE)
+
+             ]
+        ]
 
     @staticmethod
     def file_list_layout(key, f_type):

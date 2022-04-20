@@ -51,14 +51,34 @@ def color_mask(mask, color):
 
 
 def painter(img1, img2, alpha2):
-    return (img1.astype('float') * (1 - alpha2) + img2.astype('float') * alpha2).astype('uint8')
+    # Apply alpha to image and mask
+    img = (img1.astype('float') * (1 - alpha2) + img2.astype('float') * alpha2).astype('uint8')
+
+    # Remove alpha where mask is black
+    # Avoids losing color when adding more layers
+    img[img2 == 0] = img1[img2 == 0]
+    return img
+
+
+def get_color_map(ids):
+    color_map = {}
+    for id_region in ids:
+        color_map[id_region] = list(np.random.choice(range(256), size=3))
+    return color_map
+
+
+def set_color_map(ids, color):
+    color_map = {}
+    for id_region in ids:
+        color_map[id_region] = color
+    return color_map
 
 
 def get_aspect(aspect, axis):
     if axis == 0:
         return aspect[2] / aspect[1]
     elif axis == 1:
-        return aspect[2] / aspect[0]
+        return aspect[0] / aspect[2]
     elif axis == 2:
         return aspect[0] / aspect[1]
 
@@ -98,13 +118,21 @@ def from_hounsfield(value):
 
 
 # Get current slice of the tensor
-def get_slice(axis, frame, tensor):
-    if axis == 0:
-        img = np.rot90(tensor[frame, :, :], axes=(1, 0))
-    elif axis == 1:
-        img = np.rot90(tensor[:, frame, :], axes=(1, 0))
+def get_slice(axis, frame, tensor, t_file):
+    if t_file == "file":
+        if axis == 0:
+            img = tensor[frame, :, :]
+        elif axis == 1:
+            img = np.rot90(tensor[:, tensor.shape[1] - 1 - frame, :], k=2)
+        else:
+            img = np.rot90(tensor[:, :, frame], k=2)
     else:
-        img = np.rot90(tensor[:, :, frame], k=2)
+        if axis == 0:
+            img = np.rot90(tensor[tensor.shape[0] - 1 - frame, :, :], k=2)
+        elif axis == 1:
+            img = tensor[:, frame, :]
+        else:
+            img = tensor[:, :, frame]
 
     return img
 
