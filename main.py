@@ -85,6 +85,15 @@ if __name__ == "__main__":
                 elif event == key+"-set-top":
                     c.refresh_view(0)
 
+            for key in ["patient", "avg"]:
+                # Change slice
+                if event == key+"_points-set-front":
+                    c.refresh_view(1, key+"_points", key)
+                elif event == key+"_points-set-end":
+                    c.refresh_view(2, key+"_points", key)
+                elif event == key+"_points-set-top":
+                    c.refresh_view(0, key+"_points", key)
+
             for key in m.alpha_keys:
                 if event == "set-alpha-"+key:
                     c.refresh()

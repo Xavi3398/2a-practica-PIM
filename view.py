@@ -87,20 +87,22 @@ class View:
             self.reset_sliders_by_key(key)
 
     def reset_sliders_by_key(self, key):
-        self.window[key+'-frame-top'].Update(range=(0, self.m.tensors[key].shape[0] - 1),
-                                             value=0)
-        self.window[key+'-frame-front'].Update(range=(0, self.m.tensors[key].shape[1] - 1),
-                                               value=0)
-        self.window[key+'-frame-end'].Update(range=(0, self.m.tensors[key].shape[2] - 1),
-                                             value=0)
+        self.window[key+'-frame-top'].Update(range=(0, self.m.tensors[key].shape[0] - 1), value=0)
+        self.window[key+'-frame-front'].Update(range=(0, self.m.tensors[key].shape[1] - 1), value=0)
+        self.window[key+'-frame-end'].Update(range=(0, self.m.tensors[key].shape[2] - 1), value=0)
+
+        if key == "patient" or key == "avg":
+            self.reset_sliders_coregister(key)
 
     def reset_sliders_alpha(self, alpha_key, key):
-        self.window[alpha_key + '-frame-top'].Update(range=(0, self.m.tensors[key].shape[0] - 1),
-                                                     value=0)
-        self.window[alpha_key + '-frame-front'].Update(range=(0, self.m.tensors[key].shape[1] - 1),
-                                                       value=0)
-        self.window[alpha_key + '-frame-end'].Update(range=(0, self.m.tensors[key].shape[2] - 1),
-                                                     value=0)
+        self.window[alpha_key + '-frame-top'].Update(range=(0, self.m.tensors[key].shape[0] - 1), value=0)
+        self.window[alpha_key + '-frame-front'].Update(range=(0, self.m.tensors[key].shape[1] - 1), value=0)
+        self.window[alpha_key + '-frame-end'].Update(range=(0, self.m.tensors[key].shape[2] - 1), value=0)
+
+    def reset_sliders_coregister(self, key):
+        self.window[key + "_points" + '-frame-top'].Update(range=(0, self.m.tensors[key].shape[0] - 1), value=0)
+        self.window[key + "_points" + '-frame-front'].Update(range=(0, self.m.tensors[key].shape[1] - 1), value=0)
+        self.window[key + "_points" + '-frame-end'].Update(range=(0, self.m.tensors[key].shape[2] - 1), value=0)
 
     @staticmethod
     def tensor_points_selector_layout(key):

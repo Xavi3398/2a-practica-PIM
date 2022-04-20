@@ -31,6 +31,7 @@ class Coregister(ITab):
             self.refresh_view(2, "avg_points", "avg")
 
     def refresh_view(self, axis, gui_key, tensor_key):
+        print(axis, gui_key, tensor_key)
         if axis == 0:
             self.plots[tensor_key]["top"] = self.plot_image(axis, int(self.v.values[gui_key+"-frame-top"]),
                                             "Top", gui_key+"-top", self.plots[tensor_key]["top"], tensor_key)
@@ -44,8 +45,8 @@ class Coregister(ITab):
     def plot_image(self, axis, frame, title, canvas_key, plot, tensor_key):
         fig = plt.figure(figsize=(3, 3))
         ax = fig.add_subplot(111)
-        ax.imshow(get_slice(axis, frame, self.m.tensors[tensor_key], "file"), cmap='gray',
-                  aspect=get_aspect(axis=axis, aspect=self.m.aspects[tensor_key]))
+        ax.imshow(get_slice(axis, frame, self.m.tensors[tensor_key], "file" if tensor_key == "avg" else "folder"),
+                  cmap='gray', aspect=get_aspect(axis=axis, aspect=self.m.aspects[tensor_key]))
         ax.axis(False)
         plt.title(tensor_key.capitalize() + ", " + title)
 
@@ -66,25 +67,27 @@ class Coregister(ITab):
 
         return draw_figure(self.v.window[canvas_key].TKCanvas, fig, plot)
 
-    def click_event(self, key, perspective, ev):
+    def click_event(self, key, perspective, axis, ev):
         print("key:", key, "perspective:", perspective, "ev:", (ev.xdata, ev.ydata))
         self.m.points[key].append((ev.xdata, ev.ydata))
         self.v.window["points-"+key].Update(values=self.m.points[key])
+        print(get_coordinates(ev.xdata, ev.ydata, axis, self.v.values[key+"_points"+"-frame-"+perspective],
+                              self.m.tensors[key].shape, "file" if key == "avg" else "folder"))
 
     def click_event_patient_top(self, ev):
-        self.click_event("patient", "top", ev)
+        self.click_event("patient", "top", 0, ev)
 
     def click_event_patient_front(self, ev):
-        self.click_event("patient", "front", ev)
+        self.click_event("patient", "front", 1, ev)
 
     def click_event_patient_end(self, ev):
-        self.click_event("patient", "end", ev)
+        self.click_event("patient", "end", 2, ev)
 
     def click_event_avg_top(self, ev):
-        self.click_event("avg", "top", ev)
+        self.click_event("avg", "top", 0, ev)
 
     def click_event_avg_front(self, ev):
-        self.click_event("avg", "front", ev)
+        self.click_event("avg", "front", 1, ev)
 
     def click_event_avg_end(self, ev):
-        self.click_event("avg", "end", ev)
+        self.click_event("avg", "end", 2, ev)
