@@ -16,8 +16,8 @@ if __name__ == "__main__":
     cc = Controls(m, v)
     c_patient = TensorController(m, v, key="patient", t_file="folder")
     c_avg = TensorController(m, v, key="avg", t_file="file")
-    c_atlas = TensorController(m, v, key="atlas", t_file="file")
-    c_avg_atlas = AlphaController(m, v, tensor_key="avg", mask_key="atlas")
+    c_atlas = AlphaController(m, v, key="atlas_atlas", tensor_key="atlas", mask_key="atlas")
+    c_avg_atlas = AlphaController(m, v, key="avg_atlas", tensor_key="avg", mask_key="atlas")
     c_coregister = Coregister(m, v)
 
     # IGU loop: check events until end of program
@@ -28,7 +28,7 @@ if __name__ == "__main__":
 
         if v.tab == "patient":
             c = c_patient
-        elif v.tab == "atlas":
+        elif v.tab == "atlas_atlas":
             c = c_atlas
         elif v.tab == "avg":
             c = c_avg

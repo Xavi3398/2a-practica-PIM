@@ -3,8 +3,8 @@ class Model:
     def __init__(self):
 
         self.keys = ["patient", "atlas", "avg"]
-        self.tab_keys = ["patient", "atlas", "avg", "avg_atlas"]
-        self.alpha_keys = ["avg_atlas"]
+        self.tab_keys = ["patient", "atlas_atlas", "avg", "avg_atlas"]
+        self.alpha_keys = ["avg_atlas", "atlas_atlas"]
 
         self.dcms = {key: None for key in self.keys}
 

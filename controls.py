@@ -24,17 +24,16 @@ class Controls:
         # self.m.aspect_atlas[0] = float(self.m.dcm_atlas["PixelSpacing"][0])
         # self.m.aspect_atlas[1] = float(self.m.dcm_atlas["PixelSpacing"][1])
 
-        # Set cropping slider values
-        self.v.reset_sliders(key)
-
         if key == "avg":
             self.m.tensors[key] = self.m.tensors[key][6:-6, 6:-6, 6:-6]
         elif key == "atlas":
-            self.v.window['avg_atlas-frame-top'].Update(range=(0, self.m.tensors[key].shape[0] - 1), value=0)
-            self.v.window['avg_atlas-frame-front'].Update(range=(0, self.m.tensors[key].shape[1] - 1), value=0)
-            self.v.window['avg_atlas-frame-end'].Update(range=(0, self.m.tensors[key].shape[2] - 1), value=0)
             self.m.color_map = get_color_map(np.unique(self.m.tensors[key]))
-
+            for alpha_key in self.m.alpha_keys:
+                self.v.window[alpha_key+'-frame-top'].Update(range=(0, self.m.tensors[key].shape[0] - 1), value=0)
+                self.v.window[alpha_key+'-frame-front'].Update(range=(0, self.m.tensors[key].shape[1] - 1), value=0)
+                self.v.window[alpha_key+'-frame-end'].Update(range=(0, self.m.tensors[key].shape[2] - 1), value=0)
+        else:
+            self.v.reset_sliders(key)
         print(self.m.tensors[key].shape)
 
     def read_dcom_folder(self, key):

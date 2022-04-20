@@ -6,12 +6,12 @@ import cv2
 
 class AlphaController(ITab):
 
-    def __init__(self, model, view, tensor_key, mask_key):
+    def __init__(self, model, view, key, tensor_key, mask_key):
         super().__init__(model, view)
         self.plot_front = None
         self.plot_end = None
         self.plot_top = None
-        self.key = tensor_key + "_" + mask_key
+        self.key = key
         self.tensor_key = tensor_key
         self.mask_key = mask_key
 

@@ -45,7 +45,7 @@ class View:
             [sg.TabGroup([[
                 sg.Tab('Patient', View.tensor_view_layout("patient"), key="patient"),
                 sg.Tab('Avg', View.tensor_view_layout("avg"), key="avg"),
-                sg.Tab('Atlas', View.tensor_view_layout("atlas"), key="atlas"),
+                sg.Tab('Atlas', View.alpha_view_layout("atlas_atlas"), key="atlas_atlas", element_justification='c'),
                 sg.Tab('Avg + Atlas', View.alpha_view_layout("avg_atlas"), key="avg_atlas", element_justification='c'),
                 sg.Tab('Coregister', coregister_layout, key="coregister")
             ]], key="tabgrp", enable_events=True)]
