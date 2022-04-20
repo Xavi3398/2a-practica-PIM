@@ -16,3 +16,6 @@ class Model:
 
         self.color = (255, 0, 0)
         self.color_map = None
+
+        self.region_names = None
+        self.region_ids = None

@@ -40,7 +40,14 @@ class AlphaController(ITab):
         rgb = cv2.cvtColor((img * 255 / np.max(img)).astype("uint8"), cv2.COLOR_GRAY2RGB)  # Gray image to RGB
         mask = get_slice(axis, frame, self.m.tensors[self.mask_key], "file")
 
-        for id_region in np.unique(mask):
+        # Select regions which appear in the image and have been selected by the user
+        regions = set(np.unique(mask))
+        if self.m.region_ids is not None:
+            selected_region_ids = [self.m.region_ids[region] for region in self.v.values["region-" + self.key]]
+            regions &= set(selected_region_ids)
+
+        # Paint all regions of interest
+        for id_region in regions:
             if id_region != 0:
                 mask_r = color_mask(mask == id_region, self.m.color_map[id_region])  # Color mask
                 rgb = painter(rgb, mask_r, self.v.values["alpha-"+self.key])

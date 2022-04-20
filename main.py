@@ -56,6 +56,10 @@ if __name__ == "__main__":
                 m.color_map = get_color_map(np.unique(m.tensors["atlas"]))
                 c.refresh()
 
+        elif event == "atlas_keys_name":
+            v.window["atlas_keys_file"].Update(value=v.values["atlas_keys_name"])
+            cc.read_atlas_keys()
+
         else:
             for key in m.keys:
 
@@ -86,6 +90,8 @@ if __name__ == "__main__":
 
             for key in m.alpha_keys:
                 if event == "set-alpha-"+key:
+                    c.refresh()
+                if event == "set-listbox-"+key:
                     c.refresh()
 
     v.window.close()

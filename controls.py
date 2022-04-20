@@ -39,10 +39,10 @@ class Controls:
 
     def read_dcom_folder(self, key):
 
-        self.m.file_patient = self.v.values[key+"_name"]
+        self.m.files[key] = self.v.values[key+"_name"]
         imgs = []
 
-        files = glob.glob(self.m.file_patient + "/*.dcm")
+        files = glob.glob(self.m.files[key] + "/*.dcm")
 
         # Read files in folder
         for file in files:
@@ -66,3 +66,25 @@ class Controls:
 
         # Set slider values
         self.v.reset_sliders(key)
+
+    def read_atlas_keys(self):
+
+        self.m.files["atlas_keys"] = self.v.values["atlas_keys_name"]
+        self.m.region_names = {}
+        self.m.region_ids = {}
+
+        with open(self.m.files["atlas_keys"], 'r') as f:
+            while True:
+                # Read line
+                line = f.readline()
+
+                # End reading
+                if not line:
+                    break
+
+                words = line.split(" ")
+                self.m.region_ids[words[0] + " - " + words[1]] = int(words[0])
+                self.m.region_names[words[0]] = words[0] + " - " + words[1]
+
+        for key in self.m.alpha_keys:
+            self.v.window["region-"+key].Update(values=list(self.m.region_names.values()))

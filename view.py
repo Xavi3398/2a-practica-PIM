@@ -22,7 +22,11 @@ class View:
         file_list_column = [
             View.file_list_layout("patient", "folder"),
             View.file_list_layout("avg", "file"),
-            View.file_list_layout("atlas", "file")
+            View.file_list_layout("atlas", "file"),
+            [sg.Text("Atlas keys:"),
+             sg.In(key="atlas_keys_file", pad=((16, 10), (0, 0)), size=(60, 15)),
+             sg.In(key="atlas_keys_name", enable_events=True, visible=False),
+             sg.FileBrowse("File", target='atlas_keys_name', file_types=[["TXT files", "*.txt"]])]
         ]
 
         # Atlas + Avg
@@ -88,23 +92,26 @@ class View:
     @staticmethod
     def alpha_view_layout(key):
         top_pad = 30
-        regions = ["region1", "region2", "region3"]
         return [
             [sg.Column(View.tensor_view_layout(key))],
-            [sg.Text("Alpha:", pad=((0, 5), (top_pad, 0))),
-             sg.Slider(key="alpha-"+key, default_value=0.5, pad=((0, 0), (top_pad - 15, 0)), size=(35, 15), orientation="horizontal",
-                       range=(0, 1), resolution=0.1,  enable_events=True),
-             sg.Button("Set", key="set-alpha-"+key, pad=((5, 30), (top_pad, 0))),
+            [sg.Column([
+                [sg.Text("Alpha:", pad=((0, 5), (top_pad, 0))),
+                 sg.Slider(key="alpha-"+key, default_value=0.5, pad=((0, 0), (top_pad - 15, 0)), size=(20, 15),
+                           orientation="horizontal", range=(0, 1), resolution=0.1,  enable_events=True),
+                 sg.Button("Set", key="set-alpha-"+key, pad=((5, 30), (top_pad, 0)))],
 
-             sg.Text("Mask color:", pad=((30, 5), (top_pad, 0))),
-             sg.Button("Random colors", key="change-colors", pad=((0, 10), (top_pad, 0))),
-             sg.Button("Pick Color", key="Color_Picker", pad=((0, 30), (top_pad, 0))),
+                [sg.Text("Mask color:", pad=((0, 5), (top_pad, 0))),
+                 sg.Button("Random colors", key="change-colors", pad=((0, 10), (top_pad, 0))),
+                 sg.Button("Pick Color", key="Color_Picker", pad=((0, 30), (top_pad, 0)))]
+            ]),
 
-             sg.Text("Mask color:", pad=((30, 5), (top_pad, 0))),
-             sg.Listbox(regions, size=(30, len(regions)), key='region-'+key,
-                        pad=((0, 10), (top_pad, 0)), select_mode=sg.LISTBOX_SELECT_MODE_MULTIPLE)
-
-             ]
+             sg.Column([
+                 [sg.Text("Highlighted regions:", pad=((30, 15), (top_pad, 0))),
+                  sg.Button("Set", key="set-listbox-"+key, pad=((5, 0), (top_pad, 0)))],
+                 [sg.Listbox(values=["region1", "region2", "region3"], size=(25, 10), key='region-'+key,
+                             pad=((30, 0), (5, 30)), select_mode=sg.LISTBOX_SELECT_MODE_EXTENDED,
+                             highlight_background_color="gray")]]
+             )]
         ]
 
     @staticmethod
