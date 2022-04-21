@@ -69,10 +69,10 @@ class Coregister(ITab):
 
     def click_event(self, key, perspective, axis, ev):
         print("key:", key, "perspective:", perspective, "ev:", (ev.xdata, ev.ydata))
-        self.m.points[key].append((ev.xdata, ev.ydata))
+        self.m.points[key].append(
+            get_coordinates(ev.xdata, ev.ydata, axis, self.v.values[key+"_points"+"-frame-"+perspective],
+                            self.m.tensors[key].shape, "file" if key == "avg" else "folder"))
         self.v.window["points-"+key].Update(values=self.m.points[key])
-        print(get_coordinates(ev.xdata, ev.ydata, axis, self.v.values[key+"_points"+"-frame-"+perspective],
-                              self.m.tensors[key].shape, "file" if key == "avg" else "folder"))
 
     def click_event_patient_top(self, ev):
         self.click_event("patient", "top", 0, ev)

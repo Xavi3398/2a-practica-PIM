@@ -99,31 +99,31 @@ def get_coordinates(x1, y1, axis, frame, shape, t_file):
     if t_file == "file":  # Avg and atlas
         if axis == 0:  # Top
             x = x1
-            y = y1
-            z = frame
-        elif axis == 1:  # Front
-            x = shape[1] - x1
-            z = shape[0] - y1
+            z = y1
             y = frame
+        elif axis == 1:  # Front
+            x = shape[2] - x1
+            y = shape[0] - y1
+            z = shape[1] - 1 - frame
         else:  # End
             z = shape[1] - x1
             y = shape[0] - y1
             x = frame
     else:  # Patient
         if axis == 0:  # Top
-            x = shape[1] - x1
-            y = shape[0] - y1
-            z = frame
+            x = shape[2] - x1
+            z = shape[1] - y1
+            y = shape[0] - 1 - frame
         elif axis == 1:  # Front
             x = x1
-            z = y1
-            y = frame
+            y = y1
+            z = frame
         else:  # End
             z = x1
             y = y1
             x = frame
 
-    return [x, y, z]
+    return [y, z, x]
 
 
 def traslacion(punto, vector_traslacion):
