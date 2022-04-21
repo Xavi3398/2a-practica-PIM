@@ -57,6 +57,9 @@ if __name__ == "__main__":
             m.points["avg"].clear()
             v.window["points-avg"].Update(values=m.points["avg"])
 
+        elif event == "compute-coregister":
+            c.compute_coregister()
+
         else:
             for key in m.keys:
 

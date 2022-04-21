@@ -45,6 +45,8 @@ class View:
                     [sg.Button("Coregister", key="compute-coregister")],
                     [sg.Text("MSE before coregister:"),
                      sg.InputText(readonly=True, key="mse-before", size=(15,15))],
+                    [sg.Text("MSE after initializing parameters:"),
+                     sg.InputText(readonly=True, key="mse-init", size=(15,15))],
                     [sg.Text("MSE after coregister: "),
                      sg.InputText(readonly=True, key="mse-after", size=(15,15))],
                     [sg.Text("Translation:"),
@@ -52,10 +54,10 @@ class View:
                      sg.InputText(readonly=True, key="translation-y", size=(10,15)),
                      sg.InputText(readonly=True, key="translation-z", size=(10,15))],
                     [sg.Text("Rotation:"),
+                     sg.InputText(readonly=True, key="rotation-v", size=(10,15)),
                      sg.InputText(readonly=True, key="rotation-x", size=(10,15)),
                      sg.InputText(readonly=True, key="rotation-y", size=(10,15)),
-                     sg.InputText(readonly=True, key="rotation-z", size=(10,15)),
-                     sg.InputText(readonly=True, key="rotation-v", size=(10,15))],
+                     sg.InputText(readonly=True, key="rotation-z", size=(10,15))],
                 ])]
             ])
         ]]

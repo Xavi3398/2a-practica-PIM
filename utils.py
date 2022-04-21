@@ -95,7 +95,6 @@ def delete_figure_agg(tk_agg):
 # Convert from screen coordinates to tensor coordinates
 # Rotations of the slices have to be reverted
 def get_coordinates(x1, y1, axis, frame, shape, t_file):
-
     if t_file == "file":  # Avg and atlas
         if axis == 0:  # Top
             x = x1
@@ -123,7 +122,11 @@ def get_coordinates(x1, y1, axis, frame, shape, t_file):
             y = y1
             x = frame
 
-    return [y, z, x]
+    return [int(round(i)) for i in [y, z, x]]
+
+
+def print_points_list(points_list):
+    return ["(" + str(point[0]) + ", " + str(point[1]) + ", " + str(point[2]) + ")" for point in points_list]
 
 
 def traslacion(punto, vector_traslacion):
@@ -190,7 +193,6 @@ def residuos_cuadraticos(lista_puntos_ref, lista_puntos_inp):
     return np.power(residuos, 2)
 
 
-def funcion_a_minimizar(parametros):
-    landmarks_inp_transf = [transformacion_rigida_3D(landmark, parametros) for landmark in landmarks_inp]
-    # Debe devolver una array 1-dimensional con los errores cuadráticos medios.
-    return residuos_cuadraticos(landmarks_ref, landmarks_inp_transf)
+def mse(lista_puntos_ref, lista_puntos_inp):
+    residuos = residuos_cuadraticos(lista_puntos_ref, lista_puntos_inp)
+    return sum(residuos) / len(residuos)

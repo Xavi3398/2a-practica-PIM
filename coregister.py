@@ -1,6 +1,7 @@
 from utils import *
 from ITab import *
 from matplotlib import pyplot as plt
+from scipy.optimize import least_squares
 
 
 class Coregister(ITab):
@@ -31,7 +32,6 @@ class Coregister(ITab):
             self.refresh_view(2, "avg_points", "avg")
 
     def refresh_view(self, axis, gui_key, tensor_key):
-        print(axis, gui_key, tensor_key)
         if axis == 0:
             self.plots[tensor_key]["top"] = self.plot_image(axis, int(self.v.values[gui_key+"-frame-top"]),
                                             "Top", gui_key+"-top", self.plots[tensor_key]["top"], tensor_key)
@@ -68,11 +68,12 @@ class Coregister(ITab):
         return draw_figure(self.v.window[canvas_key].TKCanvas, fig, plot)
 
     def click_event(self, key, perspective, axis, ev):
-        print("key:", key, "perspective:", perspective, "ev:", (ev.xdata, ev.ydata))
-        self.m.points[key].append(
-            get_coordinates(ev.xdata, ev.ydata, axis, self.v.values[key+"_points"+"-frame-"+perspective],
-                            self.m.tensors[key].shape, "file" if key == "avg" else "folder"))
-        self.v.window["points-"+key].Update(values=self.m.points[key])
+
+        if ev.xdata is not None and ev.ydata is not None:
+            self.m.points[key].append(
+                get_coordinates(ev.xdata, ev.ydata, axis, self.v.values[key+"_points"+"-frame-"+perspective],
+                                self.m.tensors[key].shape, "file" if key == "avg" else "folder"))
+            self.v.window["points-"+key].Update(values=print_points_list(self.m.points[key]))
 
     def click_event_patient_top(self, ev):
         self.click_event("patient", "top", 0, ev)
@@ -91,3 +92,59 @@ class Coregister(ITab):
 
     def click_event_avg_end(self, ev):
         self.click_event("avg", "end", 2, ev)
+
+    def compute_coregister(self):
+        landmarks_inp = self.m.points["patient"]
+        landmarks_ref = self.m.points["avg"]
+
+        landmarks_inp = [[0,1,1],
+                         [0,1,0],
+                         [0,0,1],
+                         [0,0,0],
+                         [1,1,1],
+                         [1,1,0],
+                         [1,0,1],
+                         [1,0,0]]
+
+        landmarks_ref = [[95,90,20],
+                         [95,89,158],
+                         [95,157,34],
+                         [95,161,139],
+                         [25,50,43],
+                         [25,50,134],
+                         [25,149,51],
+                         [25,148,128]]
+
+        # MSE before
+        self.v.window["mse-before"].Update(value=mse(landmarks_ref, landmarks_inp))
+
+        # Parameter initialization
+        parametros_iniciales = [0, 0, 0, 0, 1, 0, 0]
+        for i in range(3):
+            centroide_ref = sum([punto[i] for punto in landmarks_ref]) / len(landmarks_ref)
+            centroide_inp = sum([punto[i] for punto in landmarks_inp]) / len(landmarks_inp)
+            parametros_iniciales[i] = centroide_ref - centroide_inp
+
+        # MSE after initializing parameters
+        self.v.window["mse-init"].Update(
+            value=mse(landmarks_ref, [transformacion_rigida_3D(l, parametros_iniciales) for l in landmarks_inp]))
+
+        def funcion_a_minimizar(parametros):
+            landmarks_inp_transf = [transformacion_rigida_3D(landmark, parametros) for landmark in landmarks_inp]
+            # Debe devolver una array 1-dimensional con los errores cuadráticos medios.
+            return residuos_cuadraticos(landmarks_ref, landmarks_inp_transf)
+
+        resultado = least_squares(funcion_a_minimizar, x0=parametros_iniciales, verbose=1)
+
+        # MSE after optimization
+        self.v.window["mse-after"].Update(
+            value=mse(landmarks_ref, [transformacion_rigida_3D(l, resultado.x) for l in landmarks_inp]))
+
+        # Transformation results
+        self.v.window["translation-x"].Update(value=resultado.x[0])
+        self.v.window["translation-y"].Update(value=resultado.x[1])
+        self.v.window["translation-z"].Update(value=resultado.x[2])
+        self.v.window["rotation-v"].Update(value=resultado.x[3])
+        self.v.window["rotation-x"].Update(value=resultado.x[4])
+        self.v.window["rotation-y"].Update(value=resultado.x[5])
+        self.v.window["rotation-z"].Update(value=resultado.x[6])
