@@ -58,6 +58,9 @@ class View:
                      sg.InputText(readonly=True, key="rotation-x", size=(10,15)),
                      sg.InputText(readonly=True, key="rotation-y", size=(10,15)),
                      sg.InputText(readonly=True, key="rotation-z", size=(10,15))],
+                    [sg.Button("Patient -> Avg", key="compute-patient->avg"),
+                     sg.Button("Atlas -> Patient", key="compute-atlas->patient"),
+                     ]
                 ])]
             ])
         ]]
@@ -69,7 +72,10 @@ class View:
                 sg.Tab('Avg', View.tensor_view_layout("avg"), key="avg"),
                 sg.Tab('Atlas', View.alpha_view_layout("atlas_atlas"), key="atlas_atlas", element_justification='c'),
                 sg.Tab('Avg + Atlas', View.alpha_view_layout("avg_atlas"), key="avg_atlas", element_justification='c'),
-                sg.Tab('Coregister', coregister_layout, key="coregister")
+                sg.Tab('Coregister', coregister_layout, key="coregister"),
+                sg.Tab('Patient->Avg', View.tensor_view_layout("patient->avg"), key="patient->avg"),
+                sg.Tab('Patient + Atlas', View.alpha_view_layout("atlas->patient"), key="atlas->patient",
+                       element_justification='c')
             ]], key="tabgrp", enable_events=True)]
         ]
 

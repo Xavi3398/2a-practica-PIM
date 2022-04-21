@@ -1,8 +1,10 @@
+import time
+
 from utils import *
 from ITab import *
 from matplotlib import pyplot as plt
 from scipy.optimize import least_squares
-
+from threading import Thread
 
 class Coregister(ITab):
 
@@ -93,6 +95,8 @@ class Coregister(ITab):
     def click_event_avg_end(self, ev):
         self.click_event("avg", "end", 2, ev)
 
+
+
     def compute_coregister(self):
         landmarks_inp = self.m.points["patient"]
         landmarks_ref = self.m.points["avg"]
@@ -134,17 +138,56 @@ class Coregister(ITab):
             # Debe devolver una array 1-dimensional con los errores cuadráticos medios.
             return residuos_cuadraticos(landmarks_ref, landmarks_inp_transf)
 
-        resultado = least_squares(funcion_a_minimizar, x0=parametros_iniciales, verbose=1)
+        # Optimize transformation
+        self.m.transform_params = least_squares(funcion_a_minimizar, x0=parametros_iniciales, verbose=1).x
 
         # MSE after optimization
         self.v.window["mse-after"].Update(
-            value=mse(landmarks_ref, [transformacion_rigida_3D(l, resultado.x) for l in landmarks_inp]))
+            value=mse(landmarks_ref, [transformacion_rigida_3D(l, self.m.transform_params) for l in landmarks_inp]))
 
         # Transformation results
-        self.v.window["translation-x"].Update(value=resultado.x[0])
-        self.v.window["translation-y"].Update(value=resultado.x[1])
-        self.v.window["translation-z"].Update(value=resultado.x[2])
-        self.v.window["rotation-v"].Update(value=resultado.x[3])
-        self.v.window["rotation-x"].Update(value=resultado.x[4])
-        self.v.window["rotation-y"].Update(value=resultado.x[5])
-        self.v.window["rotation-z"].Update(value=resultado.x[6])
+        self.v.window["translation-x"].Update(value=self.m.transform_params[0])
+        self.v.window["translation-y"].Update(value=self.m.transform_params[1])
+        self.v.window["translation-z"].Update(value=self.m.transform_params[2])
+        self.v.window["rotation-v"].Update(value=self.m.transform_params[3])
+        self.v.window["rotation-x"].Update(value=self.m.transform_params[4])
+        self.v.window["rotation-y"].Update(value=self.m.transform_params[5])
+        self.v.window["rotation-z"].Update(value=self.m.transform_params[6])
+
+    def compute_patient_to_avg(self):
+        self.m.tensors["patient->avg"] = Coregister.transform_tensor(tensor1=self.m.tensors["patient"],
+                                                                     tensor2=self.m.tensors["avg"],
+                                                                     transf_params=self.m.transform_params)
+
+    def compute_atlas_to_patient(self):
+
+        transform_params = self.m.transform_params
+        transform_params[0:3] = -transform_params[0:3]
+        print(transform_params[0:3])
+
+        self.m.tensors["atlas->patient"] = Coregister.transform_tensor(tensor1=self.m.tensors["atlas"],
+                                                                       tensor2=self.m.tensors["patient"],
+                                                                       transf_params=transform_params)
+
+    @staticmethod
+    def transform_tensor(tensor1, tensor2, transf_params):
+
+        result = np.zeros(shape=tensor2.shape)
+        counter = 0
+        finish = tensor1.shape[0] * tensor1.shape[1] * tensor1.shape[2]
+        t1 = time.time()
+
+        for y in range(tensor1.shape[0]):
+            for z in range(tensor1.shape[1]):
+                for x in range(tensor1.shape[2]):
+                    x2, y2, z2 = [int(i) for i in transformacion_rigida_3D((x, y, z), transf_params)]
+                    if 0 <= y2 < tensor2.shape[0] and 0 <= z2 < tensor2.shape[1] and 0 <= x2 < tensor2.shape[2]:
+                        result[int(y2), int(z2), int(x2)] = tensor1[y, z, x]
+
+                    if time.time() - t1 > 5:
+                        print(counter, "/", finish)
+                        t1 = time.time()
+
+                    counter += 1
+
+        return result

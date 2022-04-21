@@ -18,6 +18,9 @@ if __name__ == "__main__":
     c_avg = TensorController(m, v, key="avg", t_file="file")
     c_atlas = AlphaController(m, v, key="atlas_atlas", tensor_key="atlas", mask_key="atlas")
     c_avg_atlas = AlphaController(m, v, key="avg_atlas", tensor_key="avg", mask_key="atlas")
+    c_patient_avg = TensorController(m, v, key="patient->avg", t_file="file")
+    c_atlas_patient = AlphaController(m, v, key="atlas->patient", tensor_key="patient",
+                                      mask_key="atlas->patient", t_file="folder")
     c_coregister = Coregister(m, v)
 
     # IGU loop: check events until end of program
@@ -34,8 +37,14 @@ if __name__ == "__main__":
             c = c_atlas
         elif v.tab == "avg_atlas":
             c = c_avg_atlas
-        else:
+        elif v.tab == "patient->avg":
+            c = c_patient_avg
+        elif v.tab == "atlas->patient":
+            c = c_atlas_patient
+        elif v.tab == "coregister":
             c = c_coregister
+        else:
+            raise NotImplementedError
 
         # End of Program
         if event == "Exit" or event == sg.WIN_CLOSED:
@@ -58,10 +67,22 @@ if __name__ == "__main__":
             v.window["points-avg"].Update(values=m.points["avg"])
 
         elif event == "compute-coregister":
-            c.compute_coregister()
+            if m.tensors["patient"] is not None and m.tensors["avg"] is not None \
+                    and m.points["patient"] is not None and m.points["avg"] is not None:
+                c.compute_coregister()
+
+        elif event == "compute-patient->avg":
+            if m.tensors["patient"] is not None and m.tensors["avg"] is not None and m.transform_params is not None:
+                c.compute_patient_to_avg()
+                v.reset_sliders_by_key("patient->avg")
+
+        elif event == "compute-atlas->patient":
+            if m.tensors["atlas"] is not None and m.tensors["patient"] is not None and m.transform_params is not None:
+                c.compute_atlas_to_patient()
+                v.reset_sliders_by_key("atlas->patient")
 
         else:
-            for key in m.keys:
+            for key in ["patient", "avg", "atlas"]:
 
                 # DICOM info popup
                 if event == "DICOM-Info-"+key:
@@ -78,6 +99,7 @@ if __name__ == "__main__":
                     if key == v.tab or key in v.tab or ((key == "patient" or key == "avg") and v.tab == "coregister"):
                         c.refresh()
 
+            # Tabs with tensor slices, except for coregister tab
             for key in m.tab_keys:
 
                 # Change slice
@@ -88,7 +110,9 @@ if __name__ == "__main__":
                 elif event == key+"-set-top":
                     c.refresh_view(0)
 
+            # Coregister tab
             for key in ["patient", "avg"]:
+
                 # Change slice
                 if event == key+"_points-set-front":
                     c.refresh_view(1, key+"_points", key)
@@ -97,6 +121,7 @@ if __name__ == "__main__":
                 elif event == key+"_points-set-top":
                     c.refresh_view(0, key+"_points", key)
 
+            # Tabs with alpha mask controls
             for key in m.alpha_keys:
                 if event == "set-alpha-"+key:
                     c.refresh()

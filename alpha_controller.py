@@ -6,7 +6,7 @@ import cv2
 
 class AlphaController(ITab):
 
-    def __init__(self, model, view, key, tensor_key, mask_key):
+    def __init__(self, model, view, key, tensor_key, mask_key, t_file="file"):
         super().__init__(model, view)
         self.plot_front = None
         self.plot_end = None
@@ -14,6 +14,7 @@ class AlphaController(ITab):
         self.key = key
         self.tensor_key = tensor_key
         self.mask_key = mask_key
+        self.t_file = t_file
 
     def refresh(self):
         if self.m.tensors[self.tensor_key] is not None and self.m.tensors[self.mask_key] is not None:
@@ -36,9 +37,9 @@ class AlphaController(ITab):
         fig = plt.figure(figsize=(5, 4))
         ax = fig.add_subplot(111)
 
-        img = get_slice(axis, frame, self.m.tensors[self.tensor_key], "file").astype('float')
+        img = get_slice(axis, frame, self.m.tensors[self.tensor_key], self.t_file).astype('float')
         rgb = cv2.cvtColor((img * 255 / np.max(img)).astype("uint8"), cv2.COLOR_GRAY2RGB)  # Gray image to RGB
-        mask = get_slice(axis, frame, self.m.tensors[self.mask_key], "file")
+        mask = get_slice(axis, frame, self.m.tensors[self.mask_key], self.t_file)
 
         # Select regions which appear in the image and have been selected by the user
         regions = set(np.unique(mask))
