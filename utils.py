@@ -166,6 +166,25 @@ def transformacion_rigida_3D(punto, parametros):
     return x, y, z
 
 
+def transformacion_rigida_3D_invertida(punto, parametros):
+    x, y, z = punto
+    t_11, t_12, t_13, alpha_in_rad, v_1, v_2, v_3 = parametros
+
+    # invertir parámetros de translación y ángulo de rotación
+    t_11 = -t_11
+    t_12 = -t_12
+    t_13 = -t_13
+    alpha_in_rad = -alpha_in_rad
+
+    # Aplicar primero la  rotación axial
+    x, y, z = rotacion_axial(punto=(x, y, z), angulo_en_radianes=alpha_in_rad, eje_traslacion=(v_1, v_2, v_3))
+
+    # Aplicar segundo la traslación
+    x, y, z = traslacion(punto=(x, y, z), vector_traslacion=(t_11, t_12, t_13))
+
+    return x, y, z
+
+
 def multiplicar_quaterniones(q1, q2):
     """Multiplica cuaterniones expresados como (1, i, j, k)."""
     return (

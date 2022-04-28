@@ -123,11 +123,11 @@ class Coregister(ITab):
         self.v.window["mse-before"].Update(value=mse(landmarks_ref, landmarks_inp))
 
         # Parameter initialization
-        parametros_iniciales = [0, 0, 0, 0, 1, 0, 0]
-        for i in range(3):
-            centroide_ref = sum([punto[i] for punto in landmarks_ref]) / len(landmarks_ref)
-            centroide_inp = sum([punto[i] for punto in landmarks_inp]) / len(landmarks_inp)
-            parametros_iniciales[i] = centroide_ref - centroide_inp
+        parametros_iniciales = [0, 0, 0, 0, 0, 1, 0]
+        # for i in range(3):
+        #     centroide_ref = sum([punto[i] for punto in landmarks_ref]) / len(landmarks_ref)
+        #     centroide_inp = sum([punto[i] for punto in landmarks_inp]) / len(landmarks_inp)
+        #     parametros_iniciales[i] = centroide_ref - centroide_inp
 
         # MSE after initializing parameters
         self.v.window["mse-init"].Update(
@@ -139,7 +139,7 @@ class Coregister(ITab):
             return residuos_cuadraticos(landmarks_ref, landmarks_inp_transf)
 
         # Optimize transformation
-        self.m.transform_params = least_squares(funcion_a_minimizar, x0=parametros_iniciales, verbose=1).x
+        self.m.transform_params = parametros_iniciales # least_squares(funcion_a_minimizar, x0=parametros_iniciales, verbose=1).x
 
         # MSE after optimization
         self.v.window["mse-after"].Update(
@@ -157,20 +157,19 @@ class Coregister(ITab):
     def compute_patient_to_avg(self):
         self.m.tensors["patient->avg"] = Coregister.transform_tensor(tensor1=self.m.tensors["patient"],
                                                                      tensor2=self.m.tensors["avg"],
-                                                                     transf_params=self.m.transform_params)
+                                                                     transf_params=self.m.transform_params,
+                                                                     ratio=[1/i for i in self.m.ratio_pat_avg],
+                                                                     inverted=False)
 
     def compute_atlas_to_patient(self):
-
-        transform_params = self.m.transform_params
-        transform_params[0:3] = -transform_params[0:3]
-        print(transform_params[0:3])
-
         self.m.tensors["atlas->patient"] = Coregister.transform_tensor(tensor1=self.m.tensors["atlas"],
                                                                        tensor2=self.m.tensors["patient"],
-                                                                       transf_params=transform_params)
+                                                                       transf_params=self.m.transform_params,
+                                                                       ratio=self.m.ratio_pat_avg,
+                                                                       inverted=True)
 
     @staticmethod
-    def transform_tensor(tensor1, tensor2, transf_params):
+    def transform_tensor(tensor1, tensor2, transf_params, ratio, inverted=False):
 
         result = np.zeros(shape=tensor2.shape)
         counter = 0
@@ -180,7 +179,16 @@ class Coregister(ITab):
         for y in range(tensor1.shape[0]):
             for z in range(tensor1.shape[1]):
                 for x in range(tensor1.shape[2]):
-                    x2, y2, z2 = [int(i) for i in transformacion_rigida_3D((x, y, z), transf_params)]
+                    y1 = y * ratio[0]
+                    z1 = z * ratio[1]
+                    x1 = x * ratio[2]
+                    # Calculate transformation
+                    if not inverted:
+                        x2, y2, z2 = [int(i) for i in transformacion_rigida_3D((x1, y1, z1), transf_params)]
+                    else:
+                        x2, y2, z2 = [int(i) for i in transformacion_rigida_3D_invertida((x1, y1, z1), transf_params)]
+
+                    # Set value of resulting coordinate
                     if 0 <= y2 < tensor2.shape[0] and 0 <= z2 < tensor2.shape[1] and 0 <= x2 < tensor2.shape[2]:
                         result[int(y2), int(z2), int(x2)] = tensor1[y, z, x]
 

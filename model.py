@@ -14,6 +14,7 @@ class Model:
         self.tensors = {key: None for key in self.keys}
 
         self.aspects = {key: [1.0, 1.0, 1.0] for key in self.keys}
+        self.ratio_pat_avg = [0.95, 1.89, 1.95]
 
         self.color = (255, 0, 0)
         self.color_map = None
