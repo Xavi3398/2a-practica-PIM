@@ -6,6 +6,7 @@ from utils import *
 from ITab import *
 from matplotlib import pyplot as plt
 from scipy import ndimage
+from skimage.transform import rescale
 from scipy.optimize import least_squares
 from threading import Thread
 
@@ -126,7 +127,7 @@ class Coregister(ITab):
         self.v.window["mse-before"].Update(value=mse(landmarks_ref, landmarks_inp))
 
         # Parameter initialization
-        parametros_iniciales = [0, 0, 0, 0, 0, 1, 0]
+        parametros_iniciales = [0, 0, 100, 0, 0, 1, 0]
         # for i in range(3):
         #     centroide_ref = sum([punto[i] for punto in landmarks_ref]) / len(landmarks_ref)
         #     centroide_inp = sum([punto[i] for punto in landmarks_inp]) / len(landmarks_inp)
@@ -158,14 +159,15 @@ class Coregister(ITab):
         self.v.window["rotation-z"].Update(value=self.m.transform_params[6])
 
     def compute_patient_to_avg(self):
-        self.m.tensors["patient->avg"] = Coregister.transform_tensor(tensor1=self.m.tensors["patient"],
+        self.m.tensors["patient_small"] = rescale(self.m.tensors["patient"], [1/i for i in self.m.ratio_pat_avg])
+        self.m.tensors["patient->avg"] = Coregister.transform_tensor(tensor1=self.m.tensors["patient_small"],
                                                                      tensor2=self.m.tensors["avg"],
                                                                      transf_params=self.m.transform_params,
                                                                      ratio=[1/i for i in self.m.ratio_pat_avg],
                                                                      inverted=False)
 
     def compute_atlas_to_patient(self):
-        self.m.tensors["patient_small"] = ndimage.zoom(self.m.tensors["patient"], [1/i for i in self.m.ratio_pat_avg])
+        self.m.tensors["patient_small"] = rescale(self.m.tensors["patient"], [1/i for i in self.m.ratio_pat_avg])
         self.m.tensors["atlas->patient"] = Coregister.transform_tensor(tensor1=self.m.tensors["atlas"],
                                                                        tensor2=self.m.tensors["patient_small"],
                                                                        transf_params=self.m.transform_params,

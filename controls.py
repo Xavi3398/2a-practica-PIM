@@ -63,7 +63,8 @@ class Controls:
         self.m.aspects[key][1] = float(self.m.dcms[key]["PixelSpacing"][0])
         self.m.aspects[key][2] = float(self.m.dcms[key]["PixelSpacing"][1])
 
-        self.m.aspects["atlas->patient"] = self.m.aspects[key]  # Same aspect ratio atlas->patient as patient
+        # Same aspect ratio atlas->patient as patient
+        # self.m.aspects["atlas->patient"] = self.m.aspects[key]
 
         # Set slider values
         self.v.reset_sliders(key)
