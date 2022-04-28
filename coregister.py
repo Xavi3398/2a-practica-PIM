@@ -1,8 +1,11 @@
 import time
 
+import numpy as np
+
 from utils import *
 from ITab import *
 from matplotlib import pyplot as plt
+from scipy import ndimage
 from scipy.optimize import least_squares
 from threading import Thread
 
@@ -162,8 +165,9 @@ class Coregister(ITab):
                                                                      inverted=False)
 
     def compute_atlas_to_patient(self):
+        self.m.tensors["patient_small"] = ndimage.zoom(self.m.tensors["patient"], [1/i for i in self.m.ratio_pat_avg])
         self.m.tensors["atlas->patient"] = Coregister.transform_tensor(tensor1=self.m.tensors["atlas"],
-                                                                       tensor2=self.m.tensors["patient"],
+                                                                       tensor2=self.m.tensors["patient_small"],
                                                                        transf_params=self.m.transform_params,
                                                                        ratio=self.m.ratio_pat_avg,
                                                                        inverted=True)
@@ -171,7 +175,7 @@ class Coregister(ITab):
     @staticmethod
     def transform_tensor(tensor1, tensor2, transf_params, ratio, inverted=False):
 
-        result = np.zeros(shape=tensor2.shape)
+        result = np.zeros(shape=tensor2.shape, dtype=tensor1.dtype)
         counter = 0
         finish = tensor1.shape[0] * tensor1.shape[1] * tensor1.shape[2]
         t1 = time.time()
@@ -179,14 +183,14 @@ class Coregister(ITab):
         for y in range(tensor1.shape[0]):
             for z in range(tensor1.shape[1]):
                 for x in range(tensor1.shape[2]):
-                    y1 = y * ratio[0]
-                    z1 = z * ratio[1]
-                    x1 = x * ratio[2]
+                    # y1 = y * ratio[0]
+                    # z1 = z * ratio[1]
+                    # x1 = x * ratio[2]
                     # Calculate transformation
                     if not inverted:
-                        x2, y2, z2 = [int(i) for i in transformacion_rigida_3D((x1, y1, z1), transf_params)]
+                        x2, y2, z2 = [int(i) for i in transformacion_rigida_3D((x, y, z), transf_params)]
                     else:
-                        x2, y2, z2 = [int(i) for i in transformacion_rigida_3D_invertida((x1, y1, z1), transf_params)]
+                        x2, y2, z2 = [int(i) for i in transformacion_rigida_3D_invertida((x, y, z), transf_params)]
 
                     # Set value of resulting coordinate
                     if 0 <= y2 < tensor2.shape[0] and 0 <= z2 < tensor2.shape[1] and 0 <= x2 < tensor2.shape[2]:
