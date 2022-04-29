@@ -44,7 +44,7 @@ if __name__ == "__main__":
         elif v.tab == "coregister":
             c = c_coregister
         else:
-            raise NotImplementedError
+            c = None
 
         # End of Program
         if event == "Exit" or event == sg.WIN_CLOSED:

@@ -111,8 +111,8 @@ class Coregister(ITab):
         self.v.window["mse-before"].Update(value=mse(landmarks_ref, landmarks_inp))
 
         # Parameter initialization
-        # parametros_iniciales = [0, 0, 0, 0, 0, 1, 0]  # math.pi/12
-        parametros_iniciales = [-220, 0, -270, math.pi, 0, 1, 0]  # math.pi/12
+        parametros_iniciales = [0, 0, 0, 0, 0, 1, 0]  # math.pi/12
+        # parametros_iniciales = [-220, 0, -270, math.pi, 0, 1, 0]  # math.pi/12
         # for i in range(3):
         #     centroide_ref = sum([punto[i] for punto in landmarks_ref]) / len(landmarks_ref)
         #     centroide_inp = sum([punto[i] for punto in landmarks_inp]) / len(landmarks_inp)
@@ -128,7 +128,10 @@ class Coregister(ITab):
             return residuos_cuadraticos(landmarks_ref, landmarks_inp_transf)
 
         # Optimize transformation
-        self.m.transform_params = least_squares(funcion_a_minimizar, x0=parametros_iniciales, verbose=1, max_nfev=2000).x #parametros_iniciales
+        self.m.transform_params = least_squares(funcion_a_minimizar, x0=parametros_iniciales, verbose=1,
+                                                max_nfev=2000,
+                                                bounds=[[-500,-500,-500,0,0,0,0],
+                                                        [500,500,500,2*math.pi,1,1,1]]).x  #parametros_iniciales
 
         for li, lr in zip(landmarks_inp, landmarks_ref):
             print(transformacion_rigida_3D_invertida(lr, self.m.transform_params))
