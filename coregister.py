@@ -6,6 +6,7 @@ from utils import *
 from ITab import *
 from matplotlib import pyplot as plt
 from scipy import ndimage
+import math
 from skimage.transform import rescale
 from scipy.optimize import least_squares
 from threading import Thread
@@ -99,35 +100,19 @@ class Coregister(ITab):
     def click_event_avg_end(self, ev):
         self.click_event("avg", "end", 2, ev)
 
-
-
     def compute_coregister(self):
-        landmarks_inp = self.m.points["patient"]
+
+        # Get landmarks from selected points, and scale them
         landmarks_ref = self.m.points["avg"]
-
-        landmarks_inp = [[0,1,1],
-                         [0,1,0],
-                         [0,0,1],
-                         [0,0,0],
-                         [1,1,1],
-                         [1,1,0],
-                         [1,0,1],
-                         [1,0,0]]
-
-        landmarks_ref = [[95,90,20],
-                         [95,89,158],
-                         [95,157,34],
-                         [95,161,139],
-                         [25,50,43],
-                         [25,50,134],
-                         [25,149,51],
-                         [25,148,128]]
+        landmarks_inp = [[x/self.m.ratio_pat_avg[2], y/self.m.ratio_pat_avg[0], z/self.m.ratio_pat_avg[1]]
+                         for x, y, z in self.m.points["patient"]]
 
         # MSE before
         self.v.window["mse-before"].Update(value=mse(landmarks_ref, landmarks_inp))
 
         # Parameter initialization
-        parametros_iniciales = [0, 0, 100, 0, 0, 1, 0]
+        # parametros_iniciales = [0, 0, 0, 0, 0, 1, 0]  # math.pi/12
+        parametros_iniciales = [-220, 0, -270, math.pi, 0, 1, 0]  # math.pi/12
         # for i in range(3):
         #     centroide_ref = sum([punto[i] for punto in landmarks_ref]) / len(landmarks_ref)
         #     centroide_inp = sum([punto[i] for punto in landmarks_inp]) / len(landmarks_inp)
@@ -143,7 +128,12 @@ class Coregister(ITab):
             return residuos_cuadraticos(landmarks_ref, landmarks_inp_transf)
 
         # Optimize transformation
-        self.m.transform_params = parametros_iniciales # least_squares(funcion_a_minimizar, x0=parametros_iniciales, verbose=1).x
+        self.m.transform_params = least_squares(funcion_a_minimizar, x0=parametros_iniciales, verbose=1, max_nfev=2000).x #parametros_iniciales
+
+        for li, lr in zip(landmarks_inp, landmarks_ref):
+            print(transformacion_rigida_3D_invertida(lr, self.m.transform_params))
+            print(li)
+            print()
 
         # MSE after optimization
         self.v.window["mse-after"].Update(

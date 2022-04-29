@@ -49,7 +49,7 @@ class Controls:
             imgs.append([dcm.pixel_array, dcm["SliceLocation"].value])
 
         # Order slices by instance number and get the ordered list of images
-        imgs = sorted(imgs, key=lambda t: t[1], reverse=True)
+        imgs = sorted(imgs, key=lambda t: t[1], reverse=False)
         self.m.aspects[key][0] = float(abs(imgs[0][1] - imgs[1][1]))
         imgs = [img[0] for img in imgs]
 

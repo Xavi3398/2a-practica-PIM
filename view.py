@@ -1,4 +1,5 @@
 import PySimpleGUI as sg
+from utils import *
 
 
 class View:
@@ -38,8 +39,10 @@ class View:
             ]),
             sg.Column([
                 [sg.Column([[
-                    View.tensor_points_listbox_layout("patient", "Patient points"),
-                    View.tensor_points_listbox_layout("avg", "Patient Avg")
+                    View.tensor_points_listbox_layout("patient", "Patient points",
+                                                      values=print_points_list(self.m.points["patient"])),
+                    View.tensor_points_listbox_layout("avg", "Patient Avg",
+                                                      values=print_points_list(self.m.points["avg"]))
                 ]])],
                 [sg.Column([
                     [sg.Button("Coregister", key="compute-coregister")],
@@ -117,11 +120,11 @@ class View:
         return sg.Column(View.tensor_view_layout(key, slider_len=25))
 
     @staticmethod
-    def tensor_points_listbox_layout(key, title):
+    def tensor_points_listbox_layout(key, title, values):
         return sg.Column([
             [sg.Text(title + ":", pad=((30, 0), (0, 0))),
              sg.Button("Reset", key="reset-points-" + key, pad=((10, 0), (0, 0)))],
-            [sg.Listbox(values=[], size=(18, 10), key='points-' + key, pad=((30, 0), (5, 30)),
+            [sg.Listbox(values=values, size=(18, 10), key='points-' + key, pad=((30, 0), (5, 30)),
                         highlight_background_color="gray")]
         ])
 
