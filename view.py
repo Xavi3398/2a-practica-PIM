@@ -76,7 +76,8 @@ class View:
                 sg.Tab('Atlas', View.alpha_view_layout("atlas_atlas"), key="atlas_atlas", element_justification='c'),
                 sg.Tab('Avg + Atlas', View.alpha_view_layout("avg_atlas"), key="avg_atlas", element_justification='c'),
                 sg.Tab('Coregister', coregister_layout, key="coregister"),
-                sg.Tab('Patient->Avg', View.tensor_view_layout("patient->avg"), key="patient->avg"),
+                sg.Tab('Patient->Avg', View.alpha_view_layout("patient->avg"), key="patient->avg",
+                       element_justification='c'),
                 sg.Tab('Patient + Atlas', View.alpha_view_layout("atlas->patient"), key="atlas->patient",
                        element_justification='c')
             ]], key="tabgrp", enable_events=True)]

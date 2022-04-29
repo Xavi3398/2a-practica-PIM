@@ -18,7 +18,8 @@ if __name__ == "__main__":
     c_avg = TensorController(m, v, key="avg", t_file="file")
     c_atlas = AlphaController(m, v, key="atlas_atlas", tensor_key="atlas", mask_key="atlas")
     c_avg_atlas = AlphaController(m, v, key="avg_atlas", tensor_key="avg", mask_key="atlas")
-    c_patient_avg = TensorController(m, v, key="patient->avg", t_file="file")
+    c_patient_avg = AlphaController(m, v, key="patient->avg", tensor_key="patient->avg",
+                                    mask_key="atlas", t_file="file")
     c_atlas_patient = AlphaController(m, v, key="atlas->patient", tensor_key="patient_small",
                                       mask_key="atlas->patient", t_file="folder")
     c_coregister = Coregister(m, v)
