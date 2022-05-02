@@ -63,6 +63,11 @@ class Controls:
         self.m.aspects[key][1] = float(self.m.dcms[key]["PixelSpacing"][0])
         self.m.aspects[key][2] = float(self.m.dcms[key]["PixelSpacing"][1])
 
+        # To mm
+        self.m.scale_mm[0] = self.m.aspects[key][2]
+        self.m.scale_mm[1] = self.m.aspects[key][0]
+        self.m.scale_mm[2] = self.m.aspects[key][1]
+
         # Same aspect ratio atlas->patient as patient
         # self.m.aspects["atlas->patient"] = self.m.aspects[key]
 

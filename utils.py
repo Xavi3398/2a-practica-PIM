@@ -185,25 +185,31 @@ def rotacion_axial(punto, angulo_en_radianes, eje_traslacion):
     return punto_transformado
 
 
-def transformacion_rigida_3D(punto, parametros):
+def transformacion_3D(punto, parametros, escala, invertida=False):
+    punto = escalado_3D(punto, escala)
+    punto = transformacion_rigida_3D(punto, parametros, invertida)
+    return punto
+
+
+def escalado_3D(punto, parametros):
+    x, y, z = punto
+    return x * parametros[0], y * parametros[1], z * parametros[2]
+
+
+def transformacion_rigida_3D(punto, parametros, invertida=False):
     x, y, z = punto
     t_11, t_12, t_13, alpha_in_rad, v_1, v_2, v_3 = parametros
-    #   Aplicar una primera traslación
-    x, y, z = traslacion(punto=(x, y, z), vector_traslacion=(t_11, t_12, t_13))
-    #   Aplicar una rotación axial traslación
-    x, y, z = rotacion_axial(punto=(x, y, z), angulo_en_radianes=alpha_in_rad, eje_traslacion=(v_1, v_2, v_3))
-    return x, y, z
 
-
-def transformacion_rigida_3D_invertida(punto, parametros):
-    x, y, z = punto
-    t_11, t_12, t_13, alpha_in_rad, v_1, v_2, v_3 = parametros
-
-    # Aplicar primero la  rotación axial
-    x, y, z = rotacion_axial(punto=(x, y, z), angulo_en_radianes=-alpha_in_rad, eje_traslacion=(v_1, v_2, v_3))
-
-    # Aplicar segundo la traslación
-    x, y, z = traslacion(punto=(x, y, z), vector_traslacion=(-t_11, -t_12, -t_13))
+    if not invertida:
+        #   Aplicar una primera traslación
+        x, y, z = traslacion(punto=(x, y, z), vector_traslacion=(t_11, t_12, t_13))
+        #   Aplicar una rotación axial traslación
+        x, y, z = rotacion_axial(punto=(x, y, z), angulo_en_radianes=alpha_in_rad, eje_traslacion=(v_1, v_2, v_3))
+    else:
+        # Aplicar primero la  rotación axial
+        x, y, z = rotacion_axial(punto=(x, y, z), angulo_en_radianes=-alpha_in_rad, eje_traslacion=(v_1, v_2, v_3))
+        # Aplicar segundo la traslación
+        x, y, z = traslacion(punto=(x, y, z), vector_traslacion=(-t_11, -t_12, -t_13))
 
     return x, y, z
 

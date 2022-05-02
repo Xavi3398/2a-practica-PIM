@@ -104,40 +104,39 @@ class Coregister(ITab):
 
         # Get landmarks from selected points, and scale them
         landmarks_ref = self.m.points["avg"]
-        landmarks_inp = [[x/self.m.ratio_pat_avg[2], y/self.m.ratio_pat_avg[0], z/self.m.ratio_pat_avg[1]]
-                         for x, y, z in self.m.points["patient"]]
+        landmarks_inp = self.m.points["patient"]
 
         # MSE before
-        self.v.window["mse-before"].Update(value=mse(landmarks_ref, landmarks_inp))
+        self.v.window["mse-before"].Update(
+            value=mse(landmarks_ref, [escalado_3D(landmark, self.m.scale_mm) for landmark in landmarks_inp]))
 
         # Parameter initialization
-        parametros_iniciales = [0, 0, 0, 0, 0, 1, 0]  # math.pi/12
-
-        for i in range(3):
-            centroide_ref = sum([punto[i] for punto in landmarks_ref]) / len(landmarks_ref)
-            centroide_inp = sum([punto[i] for punto in landmarks_inp]) / len(landmarks_inp)
-            parametros_iniciales[i] = centroide_ref - centroide_inp
-
-        # MSE after initializing parameters
-        self.v.window["mse-init"].Update(
-            value=mse(landmarks_ref, [transformacion_rigida_3D(l, parametros_iniciales) for l in landmarks_inp]))
+        parametros_iniciales = [0, 0, 0, 0, 1, 0, 0]
 
         def funcion_a_minimizar(parametros):
-            landmarks_inp_transf = [transformacion_rigida_3D(landmark, parametros) for landmark in landmarks_inp]
+
+            # 3D Scaling and Rigid transformation
+            landmarks_inp_transf = [transformacion_3D(landmark, parametros, self.m.scale_mm) for landmark in landmarks_inp]
+
             # Debe devolver una array 1-dimensional con los errores cuadráticos medios.
             return residuos_cuadraticos(landmarks_ref, landmarks_inp_transf)
 
         # Optimize transformation
         self.m.transform_params = least_squares(funcion_a_minimizar, x0=parametros_iniciales, verbose=1,
+                                                xtol=None,
+                                                ftol=None,
                                                 max_nfev=2000,
                                                 bounds=[[-500, -500, -500,         0, 0, 0, 0],
                                                         [ 500,  500,  500, 2*math.pi, 1, 1, 1]]).x
 
         # MSE after optimization
         self.v.window["mse-after"].Update(
-            value=mse(landmarks_ref, [transformacion_rigida_3D(l, self.m.transform_params) for l in landmarks_inp]))
+            value=mse(landmarks_ref, [transformacion_3D(l, self.m.transform_params, self.m.scale_mm) for l in landmarks_inp]))
 
         # Transformation results
+        self.v.window["rescale-x"].Update(value=self.m.scale_mm[0])
+        self.v.window["rescale-y"].Update(value=self.m.scale_mm[1])
+        self.v.window["rescale-z"].Update(value=self.m.scale_mm[2])
         self.v.window["translation-x"].Update(value=self.m.transform_params[0])
         self.v.window["translation-y"].Update(value=self.m.transform_params[1])
         self.v.window["translation-z"].Update(value=self.m.transform_params[2])
@@ -146,24 +145,12 @@ class Coregister(ITab):
         self.v.window["rotation-y"].Update(value=self.m.transform_params[5])
         self.v.window["rotation-z"].Update(value=self.m.transform_params[6])
 
-    def compute_patient_to_avg(self):
-        self.m.tensors["patient_small"] = rescale(self.m.tensors["patient"], [1/i for i in self.m.ratio_pat_avg])
-        self.m.tensors["patient->avg"] = Coregister.transform_tensor(tensor1=self.m.tensors["patient_small"],
-                                                                     tensor2=self.m.tensors["avg"],
-                                                                     transf_params=self.m.transform_params,
-                                                                     ratio=[1/i for i in self.m.ratio_pat_avg],
-                                                                     inverted=False)
-
-    def compute_atlas_to_patient(self):
-        self.m.tensors["patient_small"] = rescale(self.m.tensors["patient"], [1/i for i in self.m.ratio_pat_avg])
-        self.m.tensors["atlas->patient"] = Coregister.transform_tensor(tensor1=self.m.tensors["atlas"],
-                                                                       tensor2=self.m.tensors["patient_small"],
-                                                                       transf_params=self.m.transform_params,
-                                                                       ratio=self.m.ratio_pat_avg,
-                                                                       inverted=True)
+    def compute_patient_small(self):
+        x_scale, y_scale, z_scale = self.m.scale_mm
+        self.m.tensors["patient_small"] = rescale(self.m.tensors["patient"], [y_scale, z_scale, x_scale])
 
     @staticmethod
-    def transform_tensor(tensor1, tensor2, transf_params, ratio, inverted=False):
+    def transform_tensor(tensor1, tensor2, transf_params, inverted=False):
 
         result = np.zeros(shape=tensor2.shape, dtype=tensor1.dtype)
         counter = 0
@@ -173,14 +160,9 @@ class Coregister(ITab):
         for y in range(tensor1.shape[0]):
             for z in range(tensor1.shape[1]):
                 for x in range(tensor1.shape[2]):
-                    # y1 = y * ratio[0]
-                    # z1 = z * ratio[1]
-                    # x1 = x * ratio[2]
+
                     # Calculate transformation
-                    if not inverted:
-                        x2, y2, z2 = [int(i) for i in transformacion_rigida_3D((x, y, z), transf_params)]
-                    else:
-                        x2, y2, z2 = [int(i) for i in transformacion_rigida_3D_invertida((x, y, z), transf_params)]
+                    x2, y2, z2 = [int(i) for i in transformacion_rigida_3D((x, y, z), transf_params, invertida=inverted)]
 
                     # Set value of resulting coordinate
                     if 0 <= y2 < tensor2.shape[0] and 0 <= z2 < tensor2.shape[1] and 0 <= x2 < tensor2.shape[2]:

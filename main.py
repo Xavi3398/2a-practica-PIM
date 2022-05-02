@@ -74,12 +74,20 @@ if __name__ == "__main__":
 
         elif event == "compute-patient->avg":
             if m.tensors["patient"] is not None and m.tensors["avg"] is not None and m.transform_params is not None:
-                c.compute_patient_to_avg()
+                c.compute_patient_small()
+                m.tensors["patient->avg"] = Coregister.transform_tensor(tensor1=m.tensors["patient_small"],
+                                                                        tensor2=m.tensors["avg"],
+                                                                        transf_params=m.transform_params,
+                                                                        inverted=False)
                 v.reset_sliders_by_key("patient->avg")
 
         elif event == "compute-atlas->patient":
             if m.tensors["atlas"] is not None and m.tensors["patient"] is not None and m.transform_params is not None:
-                c.compute_atlas_to_patient()
+                c.compute_patient_small()
+                m.tensors["atlas->patient"] = Coregister.transform_tensor(tensor1=m.tensors["atlas"],
+                                                                          tensor2=m.tensors["patient_small"],
+                                                                          transf_params=m.transform_params,
+                                                                          inverted=True)
                 v.reset_sliders_by_key("atlas->patient")
 
         else:
