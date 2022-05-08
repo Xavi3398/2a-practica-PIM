@@ -1,15 +1,9 @@
-import time
-
-import numpy as np
-
 from utils import *
 from ITab import *
 from matplotlib import pyplot as plt
-from scipy import ndimage
 import math
 from skimage.transform import rescale
 from scipy.optimize import least_squares
-from threading import Thread
 
 class Coregister(ITab):
 
@@ -111,7 +105,7 @@ class Coregister(ITab):
             value=mse(landmarks_ref, [escalado_3D(landmark, self.m.scale_mm) for landmark in landmarks_inp]))
 
         # Parameter initialization
-        parametros_iniciales = [0, 0, 0, 0, 1, 0, 0]
+        parametros_iniciales = [0, 0, 0, 0, 0, 0, 0]
 
         def funcion_a_minimizar(parametros):
 

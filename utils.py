@@ -59,26 +59,6 @@ def from_hounsfield(value):
 
 
 # Get current slice of the tensor
-def get_slice2(axis, frame, tensor, t_file):
-    if t_file == "file":
-        if axis == 0:
-            img = tensor[frame, :, :]
-        elif axis == 1:
-            img = np.rot90(tensor[:, tensor.shape[1] - 1 - frame, :], k=2)
-        else:
-            img = np.rot90(tensor[:, :, frame], k=2)
-    else:
-        if axis == 0:
-            img = np.rot90(tensor[tensor.shape[0] - 1 - frame, :, :], k=2)
-        elif axis == 1:
-            img = tensor[:, frame, :]
-        else:
-            img = tensor[:, :, frame]
-
-    return img
-
-
-# Get current slice of the tensor
 def get_slice(axis, frame, tensor, t_file):
     if axis == 0:
         img = tensor[frame, :, :]
@@ -102,39 +82,6 @@ def delete_figure_agg(tk_agg):
     if tk_agg is not None:
         tk_agg.get_tk_widget().forget()
         plt.close('all')
-
-
-# Convert from screen coordinates to tensor coordinates
-# Rotations of the slices have to be reverted
-def get_coordinates2(x1, y1, axis, frame, shape, t_file):
-    if t_file == "file":  # Avg and atlas
-        if axis == 0:  # Top
-            x = x1
-            z = y1
-            y = frame
-        elif axis == 1:  # Front
-            x = shape[2] - x1
-            y = shape[0] - y1
-            z = shape[1] - 1 - frame
-        else:  # End
-            z = shape[1] - x1
-            y = shape[0] - y1
-            x = frame
-    else:  # Patient
-        if axis == 0:  # Top
-            x = shape[2] - x1
-            z = shape[1] - y1
-            y = shape[0] - 1 - frame
-        elif axis == 1:  # Front
-            x = x1
-            y = y1
-            z = frame
-        else:  # End
-            z = x1
-            y = y1
-            x = frame
-
-    return [int(round(i)) for i in [x, y, z]]
 
 
 def get_coordinates(x1, y1, axis, frame, shape, t_file):
